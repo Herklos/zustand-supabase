@@ -54,7 +54,9 @@ export function setupAuthGate(
 
       if (event === "SIGNED_IN" && refetchOnSignIn) {
         for (const store of tableStores) {
-          store.getState().fetch().catch(() => {})
+          store.getState().fetch().catch((err: unknown) => {
+            store.setState({ error: err instanceof Error ? err : new Error(String(err)) } as any)
+          })
         }
       }
 

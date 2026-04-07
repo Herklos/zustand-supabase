@@ -378,7 +378,15 @@ export class OfflineQueue {
 
   private async persist(): Promise<void> {
     if (!this.adapter) return
-    await this.adapter.setItem(QUEUE_KEY, this.queue)
+    try {
+      await this.adapter.setItem(QUEUE_KEY, this.queue)
+    } catch (err) {
+      this.logger.mutationError(
+        "__queue",
+        "PERSIST" as any,
+        `Failed to persist queue: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
   }
 
   // ── Cleanup ──────────────────────────────────────────────────────

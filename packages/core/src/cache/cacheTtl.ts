@@ -58,7 +58,9 @@ export async function fetchWithSwr<
 
   // If stale but not expired, serve cached data and refetch in background
   if (Date.now() - lastFetchedAt > staleTTL) {
-    store.getState().fetch().catch(() => {})
+    store.getState().fetch().catch((err: unknown) => {
+      store.setState({ error: err instanceof Error ? err : new Error(String(err)) } as any)
+    })
   }
   // Otherwise, data is fresh — do nothing
 }
@@ -76,7 +78,9 @@ export function setupAutoRevalidation(
 
   const interval = setInterval(() => {
     if (isStale(store, staleTTL)) {
-      store.getState().fetch().catch(() => {})
+      store.getState().fetch().catch((err: unknown) => {
+      store.setState({ error: err instanceof Error ? err : new Error(String(err)) } as any)
+    })
     }
   }, checkInterval)
 

@@ -50,35 +50,37 @@ export async function updateMany<
     return { ...prev, records }
   })
 
-  // Execute remote
-  let builder = fromTable(supabase, table, schema).update(changes as any)
-  builder = applyFilters(builder, filters as FilterDescriptor[])
-  const { data, error } = await builder.select("*")
+  try {
+    // Execute remote
+    let builder = fromTable(supabase, table, schema).update(changes as any)
+    builder = applyFilters(builder, filters as FilterDescriptor[])
+    const { data, error } = await builder.select("*")
 
-  if (error) {
-    // Rollback
+    if (error) throw new Error(error.message)
+
+    // Confirm with server response
+    const serverRows = (data ?? []) as Row[]
+    store.setState((prev: any) => {
+      const records = new Map(prev.records)
+      for (const row of serverRows) {
+        const id = (row as Record<string, unknown>)[primaryKey] as string | number
+        records.set(id, row as TrackedRow<Row>)
+      }
+      return { ...prev, records }
+    })
+
+    return serverRows as TrackedRow<Row>[]
+  } catch (err) {
+    // Rollback on any error (network, Supabase, etc.)
     store.setState((prev: any) => {
       const records = new Map(prev.records)
       for (const [id, snapshot] of snapshots) {
         records.set(id, snapshot)
       }
-      return { ...prev, records, error: new Error(error.message) }
+      return { ...prev, records, error: err instanceof Error ? err : new Error(String(err)) }
     })
-    throw new Error(error.message)
+    throw err
   }
-
-  // Confirm with server response
-  const serverRows = (data ?? []) as Row[]
-  store.setState((prev: any) => {
-    const records = new Map(prev.records)
-    for (const row of serverRows) {
-      const id = (row as Record<string, unknown>)[primaryKey] as string | number
-      records.set(id, row as TrackedRow<Row>)
-    }
-    return { ...prev, records }
-  })
-
-  return serverRows as TrackedRow<Row>[]
 }
 
 /**
@@ -115,6 +117,9 @@ export async function removeMany<
     }
   }
 
+  // Snapshot original order for rollback
+  const originalOrder = [...(store.getState() as any).order] as (string | number)[]
+
   // Optimistic remove
   store.setState((prev: any) => {
     const records = new Map(prev.records)
@@ -127,22 +132,22 @@ export async function removeMany<
     return { ...prev, records, order }
   })
 
-  // Execute remote
-  let builder = fromTable(supabase, table, schema).delete()
-  builder = applyFilters(builder, filters as FilterDescriptor[])
-  const { error } = await builder
+  try {
+    // Execute remote
+    let builder = fromTable(supabase, table, schema).delete()
+    builder = applyFilters(builder, filters as FilterDescriptor[])
+    const { error } = await builder
 
-  if (error) {
-    // Rollback
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    // Rollback — restore original order positions
     store.setState((prev: any) => {
       const records = new Map(prev.records)
-      const order = [...prev.order] as (string | number)[]
       for (const [id, snapshot] of snapshots) {
         records.set(id, snapshot)
-        order.push(id)
       }
-      return { ...prev, records, order, error: new Error(error.message) }
+      return { ...prev, records, order: originalOrder, error: err instanceof Error ? err : new Error(String(err)) }
     })
-    throw new Error(error.message)
+    throw err
   }
 }

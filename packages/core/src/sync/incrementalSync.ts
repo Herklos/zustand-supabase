@@ -77,11 +77,13 @@ export async function incrementalSync<
             mergedCount++
           }
         } else {
+          const isNew = !records.has(id)
           records.set(id, row as TrackedRow<Row>)
-          if (!records.has(id)) order.push(id)
+          if (isNew) order.push(id)
           mergedCount++
         }
 
+        // Ensure row is in order array (covers conflict-resolved path too)
         if (!order.includes(id)) order.push(id)
       }
 

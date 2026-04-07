@@ -43,6 +43,10 @@ export function useStorage(
         const result = await uploadFile(supabase, bucket, path, file, options)
         setError(result.error)
         return result.data
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err))
+        setError(e)
+        return null
       } finally {
         setIsLoading(false)
       }
@@ -58,6 +62,10 @@ export function useStorage(
         const result = await downloadFile(supabase, bucket, path)
         setError(result.error)
         return result.data
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err))
+        setError(e)
+        return null
       } finally {
         setIsLoading(false)
       }
@@ -78,6 +86,10 @@ export function useStorage(
         const result = await createSignedUrl(supabase, bucket, path, options)
         setError(result.error)
         return result.data?.signedUrl ?? null
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err))
+        setError(e)
+        return null
       } finally {
         setIsLoading(false)
       }
@@ -93,6 +105,10 @@ export function useStorage(
         const result = await listFiles(supabase, bucket, path, options)
         setError(result.error)
         return result.data
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err))
+        setError(e)
+        return null
       } finally {
         setIsLoading(false)
       }
@@ -108,6 +124,10 @@ export function useStorage(
         const result = await removeFiles(supabase, bucket, paths)
         setError(result.error)
         return !result.error
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err))
+        setError(e)
+        return false
       } finally {
         setIsLoading(false)
       }

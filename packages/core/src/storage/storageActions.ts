@@ -74,6 +74,9 @@ export function getPublicUrl(
   path: string,
 ): string {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path)
+  if (!data?.publicUrl) {
+    throw new Error(`Failed to get public URL for ${bucket}/${path}`)
+  }
   return data.publicUrl
 }
 

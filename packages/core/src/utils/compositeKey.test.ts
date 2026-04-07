@@ -10,14 +10,14 @@ describe("encodeKey", () => {
     expect(encodeKey({ id: "abc-123", name: "test" }, "id")).toBe("abc-123")
   })
 
-  it("encodes composite key with :: separator", () => {
-    expect(
-      encodeKey({ user_id: "u1", post_id: "p1" }, ["user_id", "post_id"]),
-    ).toBe("u1::p1")
+  it("encodes composite key as JSON", () => {
+    const result = encodeKey({ user_id: "u1", post_id: "p1" }, ["user_id", "post_id"])
+    expect(result).toBe(JSON.stringify(["u1", "p1"]))
   })
 
-  it("handles numeric composite keys", () => {
-    expect(encodeKey({ a: 1, b: 2 }, ["a", "b"])).toBe("1::2")
+  it("preserves numeric types in composite keys", () => {
+    const result = encodeKey({ a: 1, b: 2 }, ["a", "b"])
+    expect(result).toBe(JSON.stringify([1, 2]))
   })
 })
 
@@ -26,11 +26,17 @@ describe("buildPkFilter", () => {
     expect(buildPkFilter("id", 42)).toEqual({ id: 42 })
   })
 
-  it("builds composite-key filter", () => {
-    expect(buildPkFilter(["user_id", "post_id"], "u1::p1")).toEqual({
+  it("builds composite-key filter from JSON", () => {
+    const encoded = JSON.stringify(["u1", "p1"])
+    expect(buildPkFilter(["user_id", "post_id"], encoded)).toEqual({
       user_id: "u1",
       post_id: "p1",
     })
+  })
+
+  it("preserves numeric types in composite filter", () => {
+    const encoded = JSON.stringify([1, 2])
+    expect(buildPkFilter(["a", "b"], encoded)).toEqual({ a: 1, b: 2 })
   })
 })
 
@@ -57,7 +63,8 @@ describe("applyPkFilters", () => {
       },
     }
 
-    applyPkFilters(builder, ["user_id", "post_id"], "u1::p1")
+    const encoded = JSON.stringify(["u1", "p1"])
+    applyPkFilters(builder, ["user_id", "post_id"], encoded)
     expect(calls).toEqual([
       { col: "user_id", val: "u1" },
       { col: "post_id", val: "p1" },

@@ -1,6 +1,7 @@
 /**
  * Encode a composite primary key into a single string for Map storage.
- * For single keys, returns the value as-is. For composite, joins with "::".
+ * For single keys, returns the value as-is. For composite, uses JSON to
+ * preserve types and avoid separator ambiguity.
  */
 export function encodeKey(
   row: Record<string, unknown>,
@@ -9,7 +10,7 @@ export function encodeKey(
   if (typeof primaryKey === "string") {
     return row[primaryKey] as string | number
   }
-  return primaryKey.map((k) => String(row[k])).join("::")
+  return JSON.stringify(primaryKey.map((k) => row[k]))
 }
 
 /**
@@ -22,11 +23,11 @@ export function buildPkFilter(
   if (typeof primaryKey === "string") {
     return { [primaryKey]: id }
   }
-  // Decode composite key
-  const parts = String(id).split("::")
+  // Decode JSON-encoded composite key
+  const values = JSON.parse(String(id)) as unknown[]
   const filter: Record<string, unknown> = {}
   for (let i = 0; i < primaryKey.length; i++) {
-    filter[primaryKey[i]!] = parts[i]
+    filter[primaryKey[i]!] = values[i]
   }
   return filter
 }
@@ -42,10 +43,10 @@ export function applyPkFilters(
   if (typeof primaryKey === "string") {
     return builder.eq(primaryKey, id)
   }
-  const parts = String(id).split("::")
+  const values = JSON.parse(String(id)) as unknown[]
   let q = builder
   for (let i = 0; i < primaryKey.length; i++) {
-    q = q.eq(primaryKey[i], parts[i])
+    q = q.eq(primaryKey[i], values[i])
   }
   return q
 }

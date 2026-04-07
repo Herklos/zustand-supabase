@@ -19,10 +19,11 @@ export type PrefetchResult<Row> = {
  * import { prefetch } from 'zustand-supabase/server'
  *
  * export default async function TodosPage() {
- *   const { data } = await prefetch(supabase, 'todos', {
+ *   const { data, error } = await prefetch(supabase, 'todos', {
  *     sort: [{ column: 'created_at', ascending: false }],
  *     limit: 50,
  *   })
+ *   if (error) return <div>Error: {error.message}</div>
  *   return <TodoList initialData={data} />
  * }
  * ```
@@ -87,14 +88,22 @@ export function serializePrefetchResult<Row>(result: PrefetchResult<Row>): strin
  * Deserialize prefetched data on the client side.
  */
 export function deserializePrefetchResult<Row>(serialized: string): PrefetchResult<Row> {
-  const parsed = JSON.parse(serialized) as {
-    data: Row[]
-    error: string | null
-    fetchedAt: number
-  }
-  return {
-    data: parsed.data,
-    error: parsed.error ? new Error(parsed.error) : null,
-    fetchedAt: parsed.fetchedAt,
+  try {
+    const parsed = JSON.parse(serialized) as {
+      data: Row[]
+      error: string | null
+      fetchedAt: number
+    }
+    return {
+      data: parsed.data,
+      error: parsed.error ? new Error(parsed.error) : null,
+      fetchedAt: parsed.fetchedAt,
+    }
+  } catch {
+    return {
+      data: [],
+      error: new Error("Failed to deserialize prefetch result: invalid JSON"),
+      fetchedAt: Date.now(),
+    }
   }
 }
