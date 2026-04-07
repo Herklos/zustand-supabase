@@ -66,9 +66,15 @@ export class EncryptedAdapter implements PersistenceAdapter {
 
 /**
  * Create encryption functions using Web Crypto API (AES-GCM).
- * Works in browsers and Node.js 18+.
+ * Works in browsers and Node.js 20+. Throws if crypto.subtle is unavailable.
  */
 export function createWebCryptoEncryption(key: CryptoKey): EncryptionFunctions {
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    throw new Error(
+      "createWebCryptoEncryption requires the Web Crypto API (crypto.subtle). " +
+      "Available in browsers and Node.js 20+.",
+    )
+  }
   return {
     async encrypt(plaintext: string): Promise<string> {
       const iv = crypto.getRandomValues(new Uint8Array(12))
