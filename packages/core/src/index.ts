@@ -186,6 +186,8 @@ export { usePendingChanges } from "./hooks/usePendingChanges.js"
 export type { PendingChange } from "./hooks/usePendingChanges.js"
 export { useStorageQuota } from "./hooks/useStorageQuota.js"
 export type { UseStorageQuotaResult } from "./hooks/useStorageQuota.js"
+export { useLinkedQuery } from "./hooks/useLinkedQuery.js"
+export type { UseLinkedQueryResult } from "./hooks/useLinkedQuery.js"
 
 // ─── Server ──────────────────────────────────────────────────────────
 export { prefetch, serializePrefetchResult, deserializePrefetchResult } from "./server/prefetch.js"

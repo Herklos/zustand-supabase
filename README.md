@@ -224,6 +224,23 @@ await update(1, { completed: true })
 await remove(1)
 ```
 
+#### `useLinkedQuery(queryFn, options?)`
+
+Custom query that auto-refetches when linked stores mutate. Use for queries with joins or complex selects that can't use `useQuery` directly.
+
+```tsx
+import { useLinkedQuery } from 'zustand-supabase/hooks'
+
+const { data, isLoading, error, refetch } = useLinkedQuery(
+  () => fetchOfferApplications(supabase, offerId),
+  {
+    stores: [stores.applications],  // refetch when these stores mutate
+    deps: [offerId],                // refetch when deps change
+    enabled: !!offerId,
+  },
+)
+```
+
 #### `useSuspenseQuery(store, options?)`
 
 React Suspense-compatible query. Throws promise while loading.

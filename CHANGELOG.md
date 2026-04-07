@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 2026-04-07
+
+### Linked Queries
+
+- **`useLinkedQuery()` hook**: Custom async query that auto-refetches when linked store(s) mutate — bridges custom Supabase queries (joins, complex selects) with optimistic store updates
+
 ## [1.1.1] - 2026-04-07
 
 ### Performance
