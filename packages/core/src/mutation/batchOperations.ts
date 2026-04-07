@@ -38,13 +38,20 @@ export async function updateMany<
     }
   }
 
-  // Optimistic apply
+  // Optimistic apply with CAS mutation ID
+  const mutationId = crypto.randomUUID()
   store.setState((prev: any) => {
     const records = new Map(prev.records)
     for (const id of matchingIds) {
       const existing = records.get(id)
       if (existing) {
-        records.set(id, { ...existing, ...changes, _zs_pending: "update", _zs_optimistic: true })
+        records.set(id, {
+          ...existing,
+          ...changes,
+          _zs_pending: "update",
+          _zs_optimistic: true,
+          _zs_mutationId: mutationId,
+        })
       }
     }
     return { ...prev, records }
@@ -71,11 +78,14 @@ export async function updateMany<
 
     return serverRows as TrackedRow<Row>[]
   } catch (err) {
-    // Rollback on any error (network, Supabase, etc.)
+    // Compare-and-swap rollback: only restore rows still owned by this mutation
     store.setState((prev: any) => {
       const records = new Map(prev.records)
       for (const [id, snapshot] of snapshots) {
-        records.set(id, snapshot)
+        const current = records.get(id) as TrackedRow<Row> | undefined
+        if (current?._zs_mutationId === mutationId) {
+          records.set(id, snapshot)
+        }
       }
       return { ...prev, records, error: err instanceof Error ? err : new Error(String(err)) }
     })

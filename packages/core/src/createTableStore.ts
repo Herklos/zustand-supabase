@@ -473,7 +473,8 @@ export function createTableStore<
         const start = Date.now()
         logger.mutationStart(table, "UPSERT")
 
-        // Optimistic apply
+        // Optimistic apply with CAS mutation ID
+        const mutationId = crypto.randomUUID()
         const optimisticId =
           (row as Record<string, unknown>)[primaryKey] as
             | string
@@ -491,6 +492,7 @@ export function createTableStore<
               ...(row as unknown as Row),
               _zs_pending: "update",
               _zs_optimistic: true,
+              _zs_mutationId: mutationId,
             } as TrackedRow<Row>)
             if (!prev.records.has(optimisticId)) order.push(optimisticId)
             return { ...prev, records, order, error: null }
@@ -504,11 +506,16 @@ export function createTableStore<
 
         if (error) {
           logger.mutationError(table, "UPSERT", error.message)
-          // Rollback
+          // Compare-and-swap rollback
           if (optimisticId) {
             set((prev) => {
               const records = new Map(prev.records)
               const order = [...prev.order]
+              const current = records.get(optimisticId)
+              // Only roll back if this mutation's write is still current
+              if (current?._zs_mutationId !== mutationId) {
+                return { ...prev, error: new Error(error.message) }
+              }
               if (snapshot) {
                 records.set(optimisticId, snapshot)
               } else {
@@ -553,9 +560,8 @@ export function createTableStore<
         const start = Date.now()
         logger.mutationStart(table, "DELETE")
 
-        // Snapshot for rollback (including position in order)
+        // Snapshot for rollback
         const snapshot = get().records.get(id)
-        const originalOrder = [...get().order]
 
         // Optimistic remove
         set((prev) => {
@@ -571,14 +577,16 @@ export function createTableStore<
           .eq(primaryKey, id as any)
 
         if (error) {
-          // Rollback — restore original position
+          // Rollback — re-insert row into current order (preserves concurrent changes)
           logger.mutationError(table, "DELETE", error.message)
           set((prev) => {
             const records = new Map(prev.records)
+            const order = [...prev.order]
             if (snapshot) {
               records.set(id, snapshot)
+              if (!order.includes(id)) order.push(id)
             }
-            return { ...prev, records, order: originalOrder, error: new Error(error.message) }
+            return { ...prev, records, order, error: new Error(error.message) }
           })
           throw new Error(error.message)
         }
