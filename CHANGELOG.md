@@ -5,7 +5,8 @@
 ### Performance
 
 - **Stale-while-revalidate fetch**: `fetch()` no longer sets `isLoading: true` when the store already has cached data — hydrated/persisted records display instantly while a background refresh happens
-- **useQuery deduplication**: `useQuery` hook skips fetching if the store was fetched within the last 2 seconds, preventing duplicate network requests when multiple components mount the same store concurrently
+- **In-flight fetch deduplication**: When multiple components call `fetch()` on the same store simultaneously, only one network request fires — subsequent calls return the same in-flight promise
+- **useQuery stale check**: `useQuery` hook skips fetching if the store was fetched within the last 2 seconds, preventing redundant requests on re-renders
 
 ## [1.1.0] - 2026-04-07
 
