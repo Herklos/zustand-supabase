@@ -1,5 +1,5 @@
 {
-  "name": "@zustand-supabase/adapter-react-native",
+  "name": "zustand-supabase-adapter-react-native",
   "version": "0.1.0",
   "description": "React Native platform adapters for zustand-supabase (expo-sqlite, AsyncStorage)",
   "type": "module",

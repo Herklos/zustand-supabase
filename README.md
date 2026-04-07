@@ -21,9 +21,9 @@ Type-safe Zustand stores auto-generated from your Supabase schema. Offline-first
 ```bash
 npm install zustand-supabase zustand @supabase/supabase-js
 # Web adapters
-npm install @zustand-supabase/adapter-web
+npm install zustand-supabase-adapter-web
 # React Native adapters
-npm install @zustand-supabase/adapter-react-native
+npm install zustand-supabase-adapter-react-native
 ```
 
 ## Quick Start
@@ -39,7 +39,7 @@ npx supabase gen types typescript --project-id $PROJECT_REF > database.types.ts
 ```typescript
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseStores } from 'zustand-supabase'
-import { LocalStorageAdapter, WebNetworkStatus } from '@zustand-supabase/adapter-web'
+import { LocalStorageAdapter, WebNetworkStatus } from 'zustand-supabase-adapter-web'
 import type { Database } from './database.types'
 
 const supabase = createClient<Database>(
@@ -539,7 +539,7 @@ export default async function TodosPage() {
 #### Web
 
 ```typescript
-import { LocalStorageAdapter, IndexedDBAdapter, WebNetworkStatus } from '@zustand-supabase/adapter-web'
+import { LocalStorageAdapter, IndexedDBAdapter, WebNetworkStatus } from 'zustand-supabase-adapter-web'
 
 // Small datasets (<5MB)
 new LocalStorageAdapter()
@@ -554,7 +554,7 @@ new WebNetworkStatus()
 #### React Native
 
 ```typescript
-import { ExpoSqliteAdapter, AsyncStorageAdapter, RNNetworkStatus } from '@zustand-supabase/adapter-react-native'
+import { ExpoSqliteAdapter, AsyncStorageAdapter, RNNetworkStatus } from 'zustand-supabase-adapter-react-native'
 
 // Structured (recommended)
 new ExpoSqliteAdapter()
@@ -595,8 +595,8 @@ createTableStore({
 | Package | Description |
 |---------|-------------|
 | `zustand-supabase` | Core library |
-| `@zustand-supabase/adapter-web` | localStorage, IndexedDB, WebNetworkStatus |
-| `@zustand-supabase/adapter-react-native` | expo-sqlite, AsyncStorage, NetInfo |
+| `zustand-supabase-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus |
+| `zustand-supabase-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo |
 
 ## Tree-Shakeable Imports
 

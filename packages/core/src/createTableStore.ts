@@ -11,6 +11,7 @@ import type {
   FetchOptions,
 } from "./types.js"
 import { noopLogger, createTempId } from "./types.js"
+import { runValidation } from "./mutation/validation.js"
 import { executeQuery, executeQueryOne, fromTable } from "./query/queryExecutor.js"
 
 type StoreSet<Row, InsertRow, UpdateRow> = StoreApi<
@@ -49,6 +50,7 @@ export function createTableStore<
     isView = false,
     immer: immerMiddleware,
     devtools: devtoolsOption,
+    validate,
     _queue,
     extend,
   } = options
@@ -230,6 +232,7 @@ export function createTableStore<
 
       async insert(row) {
         assertNotView()
+        runValidation(validate?.insert, row, "insert")
         const start = Date.now()
         logger.mutationStart(table, "INSERT")
 
@@ -298,6 +301,9 @@ export function createTableStore<
 
       async insertMany(rows) {
         assertNotView()
+        for (const row of rows) {
+          runValidation(validate?.insert, row, "insert")
+        }
         const start = Date.now()
         logger.mutationStart(table, "INSERT")
 
@@ -380,6 +386,7 @@ export function createTableStore<
 
       async update(id, changes) {
         assertNotView()
+        runValidation(validate?.update, changes, "update")
         const start = Date.now()
         logger.mutationStart(table, "UPDATE")
 
@@ -435,6 +442,7 @@ export function createTableStore<
 
       async upsert(row) {
         assertNotView()
+        runValidation(validate?.insert, row, "upsert")
         const start = Date.now()
         logger.mutationStart(table, "UPSERT")
 

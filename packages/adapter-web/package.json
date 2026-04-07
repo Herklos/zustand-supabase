@@ -1,5 +1,5 @@
 {
-  "name": "@zustand-supabase/adapter-web",
+  "name": "zustand-supabase-adapter-web",
   "version": "0.1.0",
   "description": "Web platform adapters for zustand-supabase (localStorage, IndexedDB)",
   "type": "module",
