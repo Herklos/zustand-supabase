@@ -90,7 +90,7 @@ describe("lastWriteWins", () => {
     expect(result).not.toHaveProperty("_zs_pending")
   })
 
-  it("returns local on tie (local >= remote)", () => {
+  it("returns remote on tie (server wins as authoritative source)", () => {
     const resolver = lastWriteWins<Row>()
     const ts = "2024-01-01T00:00:00Z"
     const local: TrackedRow<Row> = {
@@ -101,7 +101,7 @@ describe("lastWriteWins", () => {
     }
 
     const result = resolver(local, remote, baseContext)
-    expect((result as any).title).toBe("Local")
+    expect((result as any).title).toBe("Remote")
   })
 
   it("returns remote when timestamps are missing", () => {

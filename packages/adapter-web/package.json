@@ -1,7 +1,15 @@
 {
   "name": "zustand-supabase-adapter-web",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Web platform adapters for zustand-supabase (localStorage, IndexedDB)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Herklos/zustand-supabase.git",
+    "directory": "packages/adapter-web"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,10 +25,11 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "zustand-supabase": "*"
+    "zustand-supabase": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

@@ -36,6 +36,7 @@ type OfflineQueueOptions = {
 }
 
 const QUEUE_KEY = "zs:__mutation_queue"
+const TEMP_ID_MAP_KEY = "zs:__temp_id_map"
 
 /**
  * Persistent FIFO mutation queue with coalescing, retry, and auto-flush.
@@ -46,6 +47,8 @@ export class OfflineQueue {
   private flushing = false
   private flushTimer: ReturnType<typeof setTimeout> | null = null
   private unsubNetwork: (() => void) | null = null
+  /** Persisted temp ID → real ID mappings that survive across flushes */
+  private persistedTempIdMap = new Map<string, unknown>()
 
   private readonly adapter?: PersistenceAdapter
   private readonly network?: NetworkStatusAdapter
@@ -87,11 +90,19 @@ export class OfflineQueue {
         (m) => m.status === "pending" || m.status === "failed",
       )
     }
+    // Restore persisted temp ID mappings from previous flushes
+    const tempIdData = await this.adapter.getItem<[string, unknown][]>(TEMP_ID_MAP_KEY)
+    if (tempIdData && Array.isArray(tempIdData)) {
+      this.persistedTempIdMap = new Map(tempIdData)
+    }
   }
 
   // ── Enqueue ──────────────────────────────────────────────────────
 
   async enqueue(mutation: QueuedMutation): Promise<void> {
+    if (!this.executors.has(mutation.table)) {
+      console.warn(`[zs:queue] No executor registered for table "${mutation.table}" — mutation may not flush`)
+    }
     this.queue.push(mutation)
     await this.persist()
     this.scheduleFlush()
@@ -205,7 +216,8 @@ export class OfflineQueue {
         complete: false,
       }
 
-      const tempIdMap = new Map<string, unknown>()
+      // Seed with persisted mappings from previous flushes, then add new ones
+      const tempIdMap = new Map<string, unknown>(this.persistedTempIdMap)
       const succeededIds = new Set<MutationId>()
       const rolledBackIds = new Set<MutationId>()
 
@@ -240,18 +252,20 @@ export class OfflineQueue {
         try {
           const { serverId } = await executor(mutation, tempIdMap)
 
-          // Track temp ID resolution
+          // Track temp ID resolution for all PK columns (supports composite keys)
           if (
             serverId != null &&
             mutation.operation === "INSERT"
           ) {
-            const pkValue = Object.values(mutation.primaryKey)[0]
-            if (
-              typeof pkValue === "string" &&
-              pkValue.startsWith("_temp:")
-            ) {
-              tempIdMap.set(pkValue, serverId)
-              this.onTempIdResolved?.(pkValue, serverId, mutation.table)
+            for (const pkValue of Object.values(mutation.primaryKey)) {
+              if (
+                typeof pkValue === "string" &&
+                pkValue.startsWith("_temp:")
+              ) {
+                tempIdMap.set(pkValue, serverId)
+                this.persistedTempIdMap.set(pkValue, serverId)
+                this.onTempIdResolved?.(pkValue, serverId, mutation.table)
+              }
             }
           }
 
@@ -288,6 +302,7 @@ export class OfflineQueue {
       }
 
       await this.persist()
+      await this.persistTempIdMap()
 
       result.complete = result.failed.length === 0
       this.logger.queueFlushSuccess(
@@ -385,6 +400,19 @@ export class OfflineQueue {
         "__queue",
         "PERSIST" as any,
         `Failed to persist queue: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+  }
+
+  private async persistTempIdMap(): Promise<void> {
+    if (!this.adapter || this.persistedTempIdMap.size === 0) return
+    try {
+      await this.adapter.setItem(TEMP_ID_MAP_KEY, [...this.persistedTempIdMap.entries()])
+    } catch (err) {
+      this.logger.mutationError(
+        "__queue",
+        "PERSIST" as any,
+        `Failed to persist temp ID map: ${err instanceof Error ? err.message : String(err)}`,
       )
     }
   }

@@ -76,8 +76,8 @@ describe("createSupabaseStores", () => {
     })
 
     await stores.todos.getState().fetch()
-    // Wait for async persist
-    await new Promise((r) => setTimeout(r, 50))
+    // Wait for debounced persist (100ms debounce + async write)
+    await new Promise((r) => setTimeout(r, 200))
 
     const persisted = await adapter.getItem<any[]>("zs:public:todos")
     expect(persisted).toHaveLength(1)

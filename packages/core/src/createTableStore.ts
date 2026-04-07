@@ -129,16 +129,26 @@ export function createTableStore<
 
     const persistenceKey = persistence?.key ?? `zs:${schema}:${table}`
 
+    // Debounce persistence writes to avoid excessive serialization on rapid mutations
+    let persistTimer: ReturnType<typeof setTimeout> | null = null
+
     function persistIfConfigured(): void {
-      if (persistence) {
+      if (!persistence) return
+      if (persistTimer) clearTimeout(persistTimer)
+      persistTimer = setTimeout(() => {
+        persistTimer = null
         const state = get()
         const data = recordsToArray(state.records, state.order)
         persistence.adapter
           .setItem(persistenceKey, data)
           .catch((err) => {
-            logger.mutationError(table, "PERSIST" as any, err instanceof Error ? err.message : String(err))
+            const msg = err instanceof Error ? err.message : String(err)
+            logger.mutationError(table, "PERSIST" as any, msg)
+            set({ error: new Error(`Persistence failed: ${msg}`) } as Partial<
+              TableStore<Row, InsertRow, UpdateRow>
+            >)
           })
-      }
+      }, 100)
     }
 
     function assertNotView(): void {
@@ -173,60 +183,83 @@ export function createTableStore<
         const start = Date.now()
         logger.fetchStart(table)
 
-        const opts: FetchOptions<Row> = {
-          ...fetchOptions,
-          filters: mergeFilters(fetchOptions?.filters),
-          sort: fetchOptions?.sort ?? defaultSort,
-          select: fetchOptions?.select ?? defaultSelect,
-        }
+        try {
+          const opts: FetchOptions<Row> = {
+            ...fetchOptions,
+            filters: mergeFilters(fetchOptions?.filters),
+            sort: fetchOptions?.sort ?? defaultSort,
+            select: fetchOptions?.select ?? defaultSelect,
+          }
 
-        const { data, error } = await executeQuery<Row>(
-          supabase as SupabaseClient,
-          table,
-          schema,
-          opts,
-        )
+          const { data, error, count } = await executeQuery<Row>(
+            supabase as SupabaseClient,
+            table,
+            schema,
+            opts,
+          )
 
-        if (error) {
-          logger.fetchError(table, error.message)
+          if (error) {
+            logger.fetchError(table, error.message)
+            if (thisGeneration === fetchGeneration) {
+              set({ isLoading: false, error } as Partial<
+                TableStore<Row, InsertRow, UpdateRow>
+              >)
+            }
+            return []
+          }
+
+          // Discard stale response if a newer fetch was initiated
+          if (thisGeneration !== fetchGeneration) {
+            return []
+          }
+
+          // Warn if result was likely truncated by Supabase's default row limit
+          if (
+            !opts.limit &&
+            count != null &&
+            data.length < count
+          ) {
+            logger.fetchError(
+              table,
+              `Fetch returned ${data.length} of ${count} total rows. Use pagination or set a limit to retrieve all data.`,
+            )
+          }
+
+          const { records, order } = rowsToMap(data)
+
+          // Preserve rows with pending mutations
+          const currentState = get()
+          for (const [id, existing] of currentState.records) {
+            if (existing._zs_pending && !records.has(id)) {
+              records.set(id, existing)
+              order.push(id)
+            } else if (existing._zs_pending && records.has(id)) {
+              records.set(id, existing)
+            }
+          }
+
+          logger.fetchSuccess(table, data.length, Date.now() - start)
+          set({
+            records,
+            order,
+            isLoading: false,
+            error: null,
+            lastFetchedAt: Date.now(),
+          } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
+
+          persistIfConfigured()
+
+          return recordsToArray(records, order)
+        } catch (err) {
+          logger.fetchError(table, err instanceof Error ? err.message : String(err))
           if (thisGeneration === fetchGeneration) {
-            set({ isLoading: false, error } as Partial<
-              TableStore<Row, InsertRow, UpdateRow>
-            >)
+            set({
+              isLoading: false,
+              error: err instanceof Error ? err : new Error(String(err)),
+            } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
           }
           return []
         }
-
-        // Discard stale response if a newer fetch was initiated
-        if (thisGeneration !== fetchGeneration) {
-          return []
-        }
-
-        const { records, order } = rowsToMap(data)
-
-        // Preserve rows with pending mutations
-        const currentState = get()
-        for (const [id, existing] of currentState.records) {
-          if (existing._zs_pending && !records.has(id)) {
-            records.set(id, existing)
-            order.push(id)
-          } else if (existing._zs_pending && records.has(id)) {
-            records.set(id, existing)
-          }
-        }
-
-        logger.fetchSuccess(table, data.length, Date.now() - start)
-        set({
-          records,
-          order,
-          isLoading: false,
-          error: null,
-          lastFetchedAt: Date.now(),
-        } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
-
-        persistIfConfigured()
-
-        return recordsToArray(records, order)
       },
 
       async fetchOne(id) {

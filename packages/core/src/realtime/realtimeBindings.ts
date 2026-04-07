@@ -5,6 +5,7 @@ import type {
   ConflictConfig,
   ConflictContext,
   RealtimeEvent,
+  QueuedMutation,
 } from "../types.js"
 import { RealtimeManager } from "./realtimeManager.js"
 import { resolveConflict } from "../mutation/conflictResolution.js"
@@ -16,6 +17,8 @@ type BindRealtimeOptions<Row> = {
   events?: RealtimeEvent[]
   filter?: string
   conflict?: ConflictConfig<Row>
+  /** Optional getter for pending mutations (from OfflineQueue) to populate ConflictContext */
+  getPendingMutations?: (table: string) => QueuedMutation[]
 }
 
 /**
@@ -31,7 +34,7 @@ export function bindRealtimeToStore<
   store: StoreApi<TableStore<Row, InsertRow, UpdateRow>>,
   options: BindRealtimeOptions<Row>,
 ): () => void {
-  const { table, schema, primaryKey, events, filter, conflict } = options
+  const { table, schema, primaryKey, events, filter, conflict, getPendingMutations } = options
 
   return manager.subscribe<Row>({
     table,
@@ -70,11 +73,14 @@ export function bindRealtimeToStore<
         if (existing?._zs_pending) return prev
 
         if (conflict) {
+          const pending = getPendingMutations?.(table)?.filter(
+            (m) => m.primaryKey[primaryKey] === id,
+          ) ?? []
           const context: ConflictContext = {
             table,
             primaryKey: { [primaryKey]: id },
-            hasPendingMutations: false,
-            pendingMutations: [],
+            hasPendingMutations: pending.length > 0,
+            pendingMutations: pending,
           }
           const resolved = resolveConflict(existing as TrackedRow<Row> | undefined, row, conflict, context)
           if (resolved === null) {

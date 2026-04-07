@@ -1,0 +1,127 @@
+name: Publish TypeScript Packages
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+
+  publish-core:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Set version from tag
+        working-directory: packages/core
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm pkg set "version=$VERSION"
+
+      - name: Publish zustand-supabase
+        working-directory: packages/core
+        run: npx npm@latest publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-adapter-web:
+    needs: publish-core
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Set version from tag
+        working-directory: packages/adapter-web
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm pkg set "version=$VERSION"
+          npm pkg set "dependencies.zustand-supabase=$VERSION"
+
+      - name: Publish zustand-supabase-adapter-web
+        working-directory: packages/adapter-web
+        run: npx npm@latest publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-adapter-react-native:
+    needs: publish-core
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Set version from tag
+        working-directory: packages/adapter-react-native
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm pkg set "version=$VERSION"
+          npm pkg set "dependencies.zustand-supabase=$VERSION"
+
+      - name: Publish zustand-supabase-adapter-react-native
+        working-directory: packages/adapter-react-native
+        run: npx npm@latest publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

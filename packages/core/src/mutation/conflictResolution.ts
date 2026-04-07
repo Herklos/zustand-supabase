@@ -30,6 +30,8 @@ export function localWins<
 
 /**
  * Last-write-wins based on a timestamp column.
+ * When timestamps are equal (ties), the remote (server) value wins
+ * since the server is the authoritative source of truth.
  */
 export function lastWriteWins<Row extends Record<string, unknown>>(
   timestampColumn = "updated_at",
@@ -49,7 +51,7 @@ export function lastWriteWins<Row extends Record<string, unknown>>(
         ? new Date(remoteTs).getTime()
         : (remoteTs as number)
 
-    if (localTime >= remoteTime) {
+    if (localTime > remoteTime) {
       const { _zs_pending, _zs_optimistic, _zs_mutationId, ...clean } =
         local as TrackedRow<Row> & Record<string, unknown>
       return clean as Row
@@ -61,6 +63,8 @@ export function lastWriteWins<Row extends Record<string, unknown>>(
 
 /**
  * Field-level merge: per-field, newer value wins.
+ * NOTE: Uses shallow assignment — nested objects and arrays are not deep-merged.
+ * For complex nested data, use a custom resolver.
  */
 export function fieldLevelMerge<Row extends Record<string, unknown>>(options?: {
   timestampColumn?: string
@@ -80,7 +84,7 @@ export function fieldLevelMerge<Row extends Record<string, unknown>>(options?: {
     const remoteTs = (remote as Record<string, unknown>)[timestampColumn]
     const localNewer =
       localTs && remoteTs
-        ? new Date(localTs as string).getTime() >=
+        ? new Date(localTs as string).getTime() >
           new Date(remoteTs as string).getTime()
         : false
 

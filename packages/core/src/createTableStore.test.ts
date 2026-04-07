@@ -285,11 +285,62 @@ describe("createTableStore", () => {
 
       await store.getState().fetch()
 
-      // Wait for async persist
-      await new Promise((resolve) => setTimeout(resolve, 10))
+      // Wait for debounced persist (100ms debounce + async write)
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       const persisted = await adapter.getItem<any[]>("zs:public:todos")
       expect(persisted).toHaveLength(3)
+    })
+  })
+
+  describe("fetch error handling", () => {
+    it("recovers isLoading on exception in fetch", async () => {
+      // Supabase client that throws instead of returning { error }
+      const throwingSupabase = {
+        from() {
+          return {
+            select() {
+              // Return a thenable that throws when awaited
+              return {
+                then(_resolve: any, reject: any) {
+                  reject(new Error("Network failure"))
+                },
+              }
+            },
+          }
+        },
+      }
+
+      const store = createStore({ supabase: throwingSupabase })
+      const result = await store.getState().fetch()
+
+      expect(result).toEqual([])
+      expect(store.getState().isLoading).toBe(false)
+      expect(store.getState().error).toBeTruthy()
+      expect(store.getState().error?.message).toContain("Network failure")
+    })
+  })
+
+  describe("persistence debouncing", () => {
+    it("debounces rapid mutations into a single persist write", async () => {
+      const adapter = new MemoryAdapter()
+      const setItemSpy = vi.spyOn(adapter, "setItem")
+
+      const store = createStore({ persistence: { adapter } })
+
+      // Perform multiple rapid mutations
+      store.getState().setRecord(1, { id: 1, title: "A", completed: false, created_at: "", updated_at: "" })
+      store.getState().setRecord(2, { id: 2, title: "B", completed: false, created_at: "", updated_at: "" })
+      store.getState().setRecord(3, { id: 3, title: "C", completed: false, created_at: "", updated_at: "" })
+
+      // Should NOT have called setItem yet (debounced)
+      expect(setItemSpy).not.toHaveBeenCalled()
+
+      // Wait for debounce to fire
+      await new Promise((r) => setTimeout(r, 200))
+
+      // Should have called setItem exactly once (debounced)
+      expect(setItemSpy).toHaveBeenCalledTimes(1)
     })
   })
 

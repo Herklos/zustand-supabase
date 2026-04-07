@@ -38,7 +38,9 @@ export async function incrementalSync<
 
   if (lastSyncAt) {
     const lastSyncIso = new Date(lastSyncAt).toISOString()
-    builder = builder.gt(timestampColumn, lastSyncIso)
+    // Include rows with NULL timestamp (e.g., server-side defaults not yet set)
+    // SQL NULL > anything = NULL (falsy), so these would be silently skipped
+    builder = builder.or(`${timestampColumn}.gt.${lastSyncIso},${timestampColumn}.is.null`)
   }
 
   builder = builder.order(timestampColumn, { ascending: true })

@@ -122,6 +122,7 @@ export function createSupabaseStores<
           events: tableRealtime.events,
           filter: tableRealtime.filter,
           conflict: (tableOpts?.conflict as any) ?? conflict,
+          getPendingMutations: (t) => offlineQueue.pendingMutations.filter((m) => m.table === t),
         },
       )
       cleanupFns.push(unsubscribe)

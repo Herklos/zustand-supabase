@@ -1,7 +1,15 @@
 {
   "name": "zustand-supabase",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zustand + Supabase: auto-generated stores, offline-first, realtime, type-safe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Herklos/zustand-supabase.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -46,6 +54,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },

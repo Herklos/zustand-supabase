@@ -26,6 +26,7 @@ export function useRealtime<
 ): UseRealtimeResult {
   const enabled = options?.enabled ?? true
   const status = useStore(store, (s) => s.realtimeStatus)
+  const filterKey = JSON.stringify(options?.filter ?? null)
 
   useEffect(() => {
     if (!enabled) return
@@ -33,7 +34,7 @@ export function useRealtime<
     const unsubscribe = store.getState().subscribe(options?.filter)
     return unsubscribe
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, store])
+  }, [enabled, store, filterKey])
 
   return { status }
 }

@@ -5,29 +5,40 @@ type SyncableState = {
   records: Map<string | number, unknown>
   order: (string | number)[]
   isRestoring: boolean
+  isHydrated: boolean
 }
 
 type CrossTabPayload = {
   records: [string | number, unknown][]
   order: (string | number)[]
+  sessionId?: string
 }
 
 /**
  * Sets up cross-tab synchronization using the BroadcastChannel API.
  * State changes in one tab are automatically reflected in others.
+ *
+ * @param sessionId - Optional session ID to prevent data leaking across auth sessions.
  */
 export function setupBroadcastSync(
   store: StoreApi<SyncableState>,
   name: string,
+  sessionId?: string,
 ): () => void {
   const channel = new BroadcastChannel(`zs:${name}`)
   let receiving = false
 
   channel.onmessage = (event: MessageEvent<CrossTabPayload>) => {
+    // Ignore messages from different auth sessions
+    if (sessionId && event.data.sessionId && event.data.sessionId !== sessionId) return
+
+    const current = store.getState()
+    // Don't apply cross-tab data during hydration — it would overwrite partially-loaded state
+    if (!current.isHydrated) return
+
     receiving = true
     try {
       const incoming = new Map(event.data.records)
-      const current = store.getState()
       // Preserve locally pending rows (optimistic mutations in flight)
       for (const [id, row] of current.records) {
         if ((row as any)?._zs_pending) {
@@ -35,9 +46,11 @@ export function setupBroadcastSync(
         }
       }
       const order = [...event.data.order]
+      const orderSet = new Set<string | number>(order)
       for (const [id] of current.records) {
-        if ((current.records.get(id) as any)?._zs_pending && !order.includes(id as string | number)) {
+        if ((current.records.get(id) as any)?._zs_pending && !orderSet.has(id as string | number)) {
           order.push(id as string | number)
+          orderSet.add(id as string | number)
         }
       }
       store.setState({
@@ -62,6 +75,7 @@ export function setupBroadcastSync(
       channel.postMessage({
         records: [...state.records.entries()],
         order: state.order,
+        sessionId,
       } satisfies CrossTabPayload)
     } catch (err) {
       console.warn(`[zs:crossTab:${name}] Failed to broadcast:`, err)
@@ -77,10 +91,13 @@ export function setupBroadcastSync(
 /**
  * Sets up cross-tab synchronization using localStorage events.
  * Fallback for environments without BroadcastChannel support.
+ *
+ * @param sessionId - Optional session ID to prevent data leaking across auth sessions.
  */
 export function setupStorageFallback(
   store: StoreApi<SyncableState>,
   name: string,
+  sessionId?: string,
 ): () => void {
   const key = `zs:broadcast:${name}`
   let receiving = false
@@ -89,10 +106,17 @@ export function setupStorageFallback(
     if (event.key !== key || !event.newValue) return
     try {
       const payload = JSON.parse(event.newValue) as CrossTabPayload
+
+      // Ignore messages from different auth sessions
+      if (sessionId && payload.sessionId && payload.sessionId !== sessionId) return
+
+      const current = store.getState()
+      // Don't apply cross-tab data during hydration
+      if (!current.isHydrated) return
+
       receiving = true
       try {
         const incoming = new Map(payload.records)
-        const current = store.getState()
         // Preserve locally pending rows
         for (const [id, row] of current.records) {
           if ((row as any)?._zs_pending) {
@@ -100,9 +124,11 @@ export function setupStorageFallback(
           }
         }
         const order = [...payload.order]
+        const orderSet = new Set<string | number>(order)
         for (const [id] of current.records) {
-          if ((current.records.get(id) as any)?._zs_pending && !order.includes(id as string | number)) {
+          if ((current.records.get(id) as any)?._zs_pending && !orderSet.has(id as string | number)) {
             order.push(id as string | number)
+            orderSet.add(id as string | number)
           }
         }
         store.setState({
@@ -133,6 +159,7 @@ export function setupStorageFallback(
         JSON.stringify({
           records: [...state.records.entries()],
           order: state.order,
+          sessionId,
         } satisfies CrossTabPayload),
       )
     } catch (err) {
@@ -151,19 +178,22 @@ export function setupStorageFallback(
 /**
  * Sets up cross-tab synchronization using the best available method.
  * Uses BroadcastChannel when available, falls back to localStorage events.
+ *
+ * @param sessionId - Optional session ID to prevent data leaking across auth sessions.
  */
 export function setupCrossTabSync(
   store: StoreApi<SyncableState>,
   name: string,
+  sessionId?: string,
 ): () => void {
   if (typeof BroadcastChannel !== "undefined") {
-    return setupBroadcastSync(store, name)
+    return setupBroadcastSync(store, name, sessionId)
   }
   if (
     typeof window !== "undefined" &&
     typeof localStorage !== "undefined"
   ) {
-    return setupStorageFallback(store, name)
+    return setupStorageFallback(store, name, sessionId)
   }
   return () => {}
 }

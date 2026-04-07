@@ -34,6 +34,8 @@ export function useQuery<
   const refetchInterval = options?.refetchInterval
   const optionsRef = useRef(options)
   optionsRef.current = options
+  const filterKey = JSON.stringify(options?.filters ?? null)
+  const sortKey = JSON.stringify(options?.sort ?? null)
 
   const isLoading = useStore(store, (s) => s.isLoading)
   const error = useStore(store, (s) => s.error)
@@ -57,13 +59,13 @@ export function useQuery<
     return store.getState().fetch(fetchOpts)
   }, [store])
 
-  // Initial fetch
+  // Initial fetch + refetch on filter/sort/deps changes
   useEffect(() => {
     if (!enabled) return
     // Error is captured in store.error state; prevent unhandled rejection
     fetch().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, fetch, ...deps])
+  }, [enabled, fetch, filterKey, sortKey, ...deps])
 
   // Refetch interval
   useEffect(() => {

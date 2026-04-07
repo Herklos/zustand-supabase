@@ -56,8 +56,11 @@ export function useSuspenseQuery<
       }
       promise.catch(() => {})
       suspenseCache.set(store, promise)
-      // Always clear cache so retries can trigger a new fetch
+      // Clear cache so retries can trigger a new fetch.
+      // Also set a safety timeout in case the fetch hangs indefinitely.
+      const timeout = setTimeout(() => suspenseCache.delete(store), 30_000)
       promise.finally(() => {
+        clearTimeout(timeout)
         suspenseCache.delete(store)
       })
     }
