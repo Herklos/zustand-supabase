@@ -1,0 +1,82 @@
+{
+  "name": "zustand-supabase",
+  "version": "0.1.0",
+  "description": "Zustand + Supabase: auto-generated stores, offline-first, realtime, type-safe",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    },
+    "./query": {
+      "types": "./dist/query/filters.d.ts",
+      "import": "./dist/query/filters.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/authStore.d.ts",
+      "import": "./dist/auth/authStore.js"
+    },
+    "./realtime": {
+      "types": "./dist/realtime/realtimeManager.d.ts",
+      "import": "./dist/realtime/realtimeManager.js"
+    },
+    "./persistence": {
+      "types": "./dist/persistence/persistenceAdapter.d.ts",
+      "import": "./dist/persistence/persistenceAdapter.js"
+    },
+    "./rpc": {
+      "types": "./dist/rpc/rpcAction.d.ts",
+      "import": "./dist/rpc/rpcAction.js"
+    },
+    "./sync": {
+      "types": "./dist/sync/crossTabSync.d.ts",
+      "import": "./dist/sync/crossTabSync.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "zustand": ">=4.5.0",
+    "@supabase/supabase-js": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "immer": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "zustand": "^5.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "typescript": "^5.7.0",
+    "tsup": "^8.0.0",
+    "vitest": "^3.0.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "zustand",
+    "supabase",
+    "state-management",
+    "offline-first",
+    "realtime",
+    "react"
+  ]
+}

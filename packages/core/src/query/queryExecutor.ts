@@ -1,0 +1,191 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { FilterDescriptor, SortDescriptor, FetchOptions } from "../types.js"
+
+/**
+ * Returns a schema-aware query builder for a table.
+ * Uses .schema(name) for non-public schemas (requires supabase-js >=2.39).
+ */
+export function fromTable(
+  supabase: SupabaseClient,
+  table: string,
+  schema?: string,
+): any {
+  if (schema && schema !== "public") {
+    return (supabase as any).schema(schema).from(table)
+  }
+  return supabase.from(table)
+}
+
+/**
+ * Applies an array of FilterDescriptors to a Supabase query builder.
+ */
+export function applyFilters(
+  builder: any,
+  filters: FilterDescriptor[],
+): any {
+  let q = builder
+  for (const f of filters) {
+    switch (f.op) {
+      case "eq":
+        q = q.eq(f.column, f.value)
+        break
+      case "neq":
+        q = q.neq(f.column, f.value)
+        break
+      case "gt":
+        q = q.gt(f.column, f.value)
+        break
+      case "gte":
+        q = q.gte(f.column, f.value)
+        break
+      case "lt":
+        q = q.lt(f.column, f.value)
+        break
+      case "lte":
+        q = q.lte(f.column, f.value)
+        break
+      case "like":
+        q = q.like(f.column, f.value)
+        break
+      case "ilike":
+        q = q.ilike(f.column, f.value)
+        break
+      case "is":
+        q = q.is(f.column, f.value)
+        break
+      case "in":
+        q = q.in(f.column, f.value)
+        break
+      case "contains":
+        q = q.contains(f.column, f.value)
+        break
+      case "containedBy":
+        q = q.containedBy(f.column, f.value)
+        break
+      case "overlaps":
+        q = q.overlaps(f.column, f.value)
+        break
+      case "textSearch": {
+        const opts = f.value as {
+          query: string
+          type?: string
+          config?: string
+        }
+        q = q.textSearch(f.column, opts.query, {
+          type: opts.type,
+          config: opts.config,
+        })
+        break
+      }
+      case "not":
+        q = q.not(f.column, "eq", f.value)
+        break
+      case "or":
+        q = q.or(f.value as string)
+        break
+      case "filter":
+        q = q.filter(f.column, "eq", f.value)
+        break
+    }
+  }
+  return q
+}
+
+/**
+ * Applies sort descriptors to a Supabase query builder.
+ */
+export function applySort(
+  builder: any,
+  sorts: SortDescriptor[],
+): any {
+  let q = builder
+  for (const s of sorts) {
+    q = q.order(s.column, {
+      ascending: s.ascending ?? true,
+      nullsFirst: s.nullsFirst ?? false,
+    })
+  }
+  return q
+}
+
+/**
+ * Execute a full query with filters, sort, and pagination.
+ */
+export async function executeQuery<Row>(
+  supabase: SupabaseClient,
+  table: string,
+  schema: string,
+  options: FetchOptions<Row> = {},
+): Promise<{ data: Row[]; count: number | null; error: Error | null }> {
+  // Escape hatch: direct builder access
+  if (options.queryFn) {
+    const builder = fromTable(supabase, table, schema)
+      .select(options.select ?? "*", {
+        count: options.count,
+      })
+    try {
+      const result = await options.queryFn(builder)
+      const r = result as { data: Row[] | null; count: number | null; error: any }
+      if (r.error) return { data: [], count: null, error: new Error(r.error.message) }
+      return { data: r.data ?? [], count: r.count, error: null }
+    } catch (err) {
+      return {
+        data: [],
+        count: null,
+        error: err instanceof Error ? err : new Error(String(err)),
+      }
+    }
+  }
+
+  let builder = fromTable(supabase, table, schema).select(options.select ?? "*", {
+    count: options.count,
+  })
+
+  if (options.filters?.length) {
+    builder = applyFilters(builder, options.filters as FilterDescriptor[])
+  }
+
+  if (options.sort?.length) {
+    builder = applySort(builder, options.sort as SortDescriptor[])
+  }
+
+  if (options.limit != null) {
+    builder = builder.limit(options.limit)
+  }
+
+  if (options.offset != null) {
+    const limit = options.limit ?? 1000
+    builder = builder.range(options.offset, options.offset + limit - 1)
+  }
+
+  const { data, error, count } = await builder
+
+  if (error) {
+    return { data: [], count: null, error: new Error(error.message) }
+  }
+
+  return { data: (data ?? []) as Row[], count, error: null }
+}
+
+/**
+ * Execute a single-row fetch by primary key.
+ */
+export async function executeQueryOne<Row>(
+  supabase: SupabaseClient,
+  table: string,
+  primaryKey: string,
+  id: string | number,
+  select?: string,
+  schema?: string,
+): Promise<{ data: Row | null; error: Error | null }> {
+  const { data, error } = await fromTable(supabase, table, schema)
+    .select(select ?? "*")
+    .eq(primaryKey, id)
+    .maybeSingle()
+
+  if (error) {
+    return { data: null, error: new Error(error.message) }
+  }
+
+  return { data: data as Row | null, error: null }
+}

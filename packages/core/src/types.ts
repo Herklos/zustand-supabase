@@ -1,0 +1,527 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { StoreApi } from "zustand"
+
+// ─── Supabase Database Schema Extraction ─────────────────────────────
+
+/** Extract the schema from a Database type */
+export type ExtractSchema<
+  DB,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = DB[SchemaName] extends {
+  Tables: Record<string, unknown>
+}
+  ? DB[SchemaName]
+  : never
+
+/** Extract table names from a schema */
+export type TableNames<
+  DB,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = string & keyof ExtractSchema<DB, SchemaName>["Tables"]
+
+/** Extract Row type for a specific table */
+export type TableRow<
+  DB,
+  TableName extends TableNames<DB, SchemaName>,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = ExtractSchema<DB, SchemaName>["Tables"][TableName] extends {
+  Row: infer R
+}
+  ? R
+  : never
+
+/** Extract Insert type for a specific table */
+export type TableInsert<
+  DB,
+  TableName extends TableNames<DB, SchemaName>,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = ExtractSchema<DB, SchemaName>["Tables"][TableName] extends {
+  Insert: infer I
+}
+  ? I
+  : never
+
+/** Extract Update type for a specific table */
+export type TableUpdate<
+  DB,
+  TableName extends TableNames<DB, SchemaName>,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = ExtractSchema<DB, SchemaName>["Tables"][TableName] extends {
+  Update: infer U
+}
+  ? U
+  : never
+
+/** Extract Enum type */
+export type DatabaseEnum<
+  DB,
+  EnumName extends string,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = ExtractSchema<DB, SchemaName> extends { Enums: Record<string, unknown> }
+  ? ExtractSchema<DB, SchemaName>["Enums"] extends Record<EnumName, infer E>
+    ? E
+    : never
+  : never
+
+// ─── Record Metadata (optimistic tracking) ───────────────────────────
+
+export type RecordMeta = {
+  _zs_pending?: "insert" | "update" | "delete"
+  _zs_optimistic?: boolean
+  _zs_mutationId?: string
+}
+
+/** A row with optional tracking metadata */
+export type TrackedRow<Row> = Row & Partial<RecordMeta>
+
+// ─── Realtime Event Types ────────────────────────────────────────────
+
+export type RealtimeEvent = "INSERT" | "UPDATE" | "DELETE" | "*"
+
+// ─── Filter & Query Types ────────────────────────────────────────────
+
+export type FilterOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "like"
+  | "ilike"
+  | "is"
+  | "in"
+  | "contains"
+  | "containedBy"
+  | "overlaps"
+  | "textSearch"
+  | "match"
+  | "not"
+  | "or"
+  | "filter"
+
+export type FilterDescriptor<Row = Record<string, unknown>> = {
+  column: string & keyof Row
+  op: FilterOperator
+  value: unknown
+}
+
+export type SortDescriptor<Row = Record<string, unknown>> = {
+  column: string & keyof Row
+  ascending?: boolean
+  nullsFirst?: boolean
+}
+
+export type FetchOptions<Row = Record<string, unknown>> = {
+  filters?: FilterDescriptor<Row>[]
+  sort?: SortDescriptor<Row>[]
+  limit?: number
+  offset?: number
+  select?: string
+  count?: "exact" | "planned" | "estimated"
+  /** Escape hatch: direct access to the PostgREST query builder */
+  queryFn?: (builder: unknown) => unknown
+}
+
+// ─── Table Store State ───────────────────────────────────────────────
+
+export type TableStoreState<Row> = {
+  /** Normalized record map keyed by primary key value */
+  records: Map<string | number, TrackedRow<Row>>
+  /** Ordered array of primary key values (preserves query ordering) */
+  order: (string | number)[]
+  /** Loading state */
+  isLoading: boolean
+  /** Error from last operation */
+  error: Error | null
+  /** Whether initial data has been hydrated from persistence */
+  isHydrated: boolean
+  /** Whether the store is currently restoring from persistence (feedback loop prevention) */
+  isRestoring: boolean
+  /** Timestamp of last successful fetch */
+  lastFetchedAt: number | null
+  /** Active realtime subscription status */
+  realtimeStatus: RealtimeStatus
+}
+
+export type RealtimeStatus =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "error"
+
+// ─── Table Store Actions ─────────────────────────────────────────────
+
+export type TableStoreActions<
+  Row,
+  InsertRow,
+  UpdateRow,
+> = {
+  // Query
+  fetch: (options?: FetchOptions<Row>) => Promise<TrackedRow<Row>[]>
+  fetchOne: (id: string | number) => Promise<TrackedRow<Row> | null>
+  refetch: () => Promise<TrackedRow<Row>[]>
+
+  // Mutations
+  insert: (row: InsertRow) => Promise<TrackedRow<Row>>
+  insertMany: (rows: InsertRow[]) => Promise<TrackedRow<Row>[]>
+  update: (
+    id: string | number,
+    changes: UpdateRow,
+  ) => Promise<TrackedRow<Row>>
+  upsert: (row: InsertRow) => Promise<TrackedRow<Row>>
+  remove: (id: string | number) => Promise<void>
+
+  // Local-only (no remote call)
+  setRecord: (id: string | number, row: TrackedRow<Row>) => void
+  removeRecord: (id: string | number) => void
+  clearAll: () => void
+  mergeRecords: (rows: Row[]) => void
+
+  // Realtime
+  subscribe: (filter?: FilterDescriptor<Row>[]) => () => void
+  unsubscribe: () => void
+
+  // Persistence
+  hydrate: () => Promise<void>
+  persist: () => Promise<void>
+
+  // Queue
+  flushQueue: () => Promise<void>
+  getQueueSize: () => number
+}
+
+/** Full store type = state + actions */
+export type TableStore<
+  Row,
+  InsertRow,
+  UpdateRow,
+> = TableStoreState<Row> & TableStoreActions<Row, InsertRow, UpdateRow>
+
+// ─── Mutation Queue Types ────────────────────────────────────────────
+
+export type MutationId = string
+
+export type MutationOperation = "INSERT" | "UPDATE" | "UPSERT" | "DELETE"
+
+export type MutationStatus =
+  | "pending"
+  | "in_flight"
+  | "succeeded"
+  | "failed"
+  | "rolled_back"
+
+export type QueuedMutation = {
+  id: MutationId
+  table: string
+  operation: MutationOperation
+  payload: Record<string, unknown> | null
+  primaryKey: Record<string, unknown>
+  dependsOn?: MutationId
+  createdAt: number
+  status: MutationStatus
+  retryCount: number
+  lastError?: string
+  rollbackSnapshot: Record<string, unknown> | null
+}
+
+// ─── Temp ID Management ──────────────────────────────────────────────
+
+export const TEMP_ID_PREFIX = "_temp:" as const
+
+export function createTempId(): string {
+  return `${TEMP_ID_PREFIX}${crypto.randomUUID()}`
+}
+
+export function isTempId(id: unknown): boolean {
+  return typeof id === "string" && id.startsWith(TEMP_ID_PREFIX)
+}
+
+// ─── Persistence Adapter ─────────────────────────────────────────────
+
+export interface PersistenceAdapter {
+  getItem<T>(key: string): Promise<T | null>
+  setItem<T>(key: string, value: T): Promise<void>
+  removeItem(key: string): Promise<void>
+  multiSet?(entries: [string, unknown][]): Promise<void>
+  keys?(prefix?: string): Promise<string[]>
+  clear?(): Promise<void>
+}
+
+// ─── Network Status Adapter ──────────────────────────────────────────
+
+export interface NetworkStatusAdapter {
+  isOnline(): boolean
+  subscribe(callback: (online: boolean) => void): () => void
+}
+
+// ─── Conflict Resolution ─────────────────────────────────────────────
+
+export type ConflictStrategy =
+  | "server-wins"
+  | "client-wins"
+  | "last-write-wins"
+  | "field-merge"
+  | "custom"
+
+export type ConflictResolver<Row = Record<string, unknown>> = (
+  local: TrackedRow<Row>,
+  remote: Row,
+  context: ConflictContext,
+) => Row | null
+
+export type ConflictContext = {
+  table: string
+  primaryKey: Record<string, unknown>
+  hasPendingMutations: boolean
+  pendingMutations: QueuedMutation[]
+}
+
+export type ConflictConfig<Row = Record<string, unknown>> = {
+  strategy?: ConflictStrategy
+  resolver?: ConflictResolver<Row>
+  timestampColumn?: string
+  serverOwnedFields?: string[]
+  clientOwnedFields?: string[]
+}
+
+// ─── Auth Store Types ────────────────────────────────────────────────
+
+export type AuthState = {
+  session: import("@supabase/supabase-js").Session | null
+  user: import("@supabase/supabase-js").User | null
+  isLoading: boolean
+  error: Error | null
+}
+
+export type AuthActions = {
+  initialize: () => Promise<void>
+  signIn: (credentials: {
+    email: string
+    password: string
+  }) => Promise<void>
+  signUp: (credentials: {
+    email: string
+    password: string
+  }) => Promise<void>
+  signOut: () => Promise<void>
+  signInWithOAuth: (options: {
+    provider: string
+    redirectTo?: string
+  }) => Promise<void>
+  refreshSession: () => Promise<void>
+  onAuthStateChange: () => () => void
+}
+
+export type AuthStore = AuthState & AuthActions
+
+// ─── Hydration Types ─────────────────────────────────────────────────
+
+export type HydrationPhase =
+  | "idle"
+  | "loading_local"
+  | "populating_stores"
+  | "fetching_remote"
+  | "reconciling"
+  | "replaying_queue"
+  | "ready"
+  | "error"
+
+// ─── Sync Logger ─────────────────────────────────────────────────────
+
+export interface SyncLogger {
+  fetchStart(table: string): void
+  fetchSuccess(table: string, count: number, durationMs: number): void
+  fetchError(table: string, error: string): void
+  mutationStart(table: string, operation: MutationOperation): void
+  mutationSuccess(table: string, operation: MutationOperation, durationMs: number): void
+  mutationError(table: string, operation: MutationOperation, error: string): void
+  queueFlushStart(count: number): void
+  queueFlushSuccess(succeeded: number, failed: number): void
+  conflict(table: string, id: string | number): void
+  realtimeEvent(table: string, event: string): void
+}
+
+export const noopLogger: SyncLogger = {
+  fetchStart() {},
+  fetchSuccess() {},
+  fetchError() {},
+  mutationStart() {},
+  mutationSuccess() {},
+  mutationError() {},
+  queueFlushStart() {},
+  queueFlushSuccess() {},
+  conflict() {},
+  realtimeEvent() {},
+}
+
+export const consoleLogger: SyncLogger = {
+  fetchStart(table) {
+    console.log(`[zs:${table}] fetch start`)
+  },
+  fetchSuccess(table, count, ms) {
+    console.log(`[zs:${table}] fetch success: ${count} rows in ${ms}ms`)
+  },
+  fetchError(table, error) {
+    console.error(`[zs:${table}] fetch error: ${error}`)
+  },
+  mutationStart(table, op) {
+    console.log(`[zs:${table}] ${op} start`)
+  },
+  mutationSuccess(table, op, ms) {
+    console.log(`[zs:${table}] ${op} success in ${ms}ms`)
+  },
+  mutationError(table, op, error) {
+    console.error(`[zs:${table}] ${op} error: ${error}`)
+  },
+  queueFlushStart(count) {
+    console.log(`[zs:queue] flush start: ${count} mutations`)
+  },
+  queueFlushSuccess(succeeded, failed) {
+    console.log(
+      `[zs:queue] flush done: ${succeeded} succeeded, ${failed} failed`,
+    )
+  },
+  conflict(table, id) {
+    console.warn(`[zs:${table}] conflict on row ${id}`)
+  },
+  realtimeEvent(table, event) {
+    console.log(`[zs:${table}] realtime ${event}`)
+  },
+}
+
+// ─── Store Factory Options ───────────────────────────────────────────
+
+export type CreateTableStoreOptions<
+  DB,
+  Row,
+  InsertRow,
+  UpdateRow,
+  Extensions extends Record<string, unknown> = Record<string, never>,
+> = {
+  supabase: SupabaseClient<DB>
+  table: string
+  schema?: string
+  primaryKey?: string
+
+  // Query defaults
+  defaultFilters?: FilterDescriptor<Row>[]
+  defaultSort?: SortDescriptor<Row>[]
+  defaultSelect?: string
+
+  // Persistence
+  persistence?: {
+    adapter: PersistenceAdapter
+    key?: string
+  }
+
+  // Offline queue
+  offlineQueue?: {
+    enabled?: boolean
+    maxRetries?: number
+    flushDebounceMs?: number
+  }
+
+  // Network
+  network?: NetworkStatusAdapter
+
+  // Realtime
+  realtime?: {
+    enabled?: boolean
+    events?: RealtimeEvent[]
+    filter?: string
+  }
+
+  // Conflict
+  conflict?: ConflictConfig<Row>
+
+  // Middleware
+  /** Pass the `immer` middleware from `zustand/middleware/immer` to enable draft-based mutations */
+  immer?: (config: any) => any
+  devtools?: boolean | { name?: string }
+
+  // Logger
+  logger?: SyncLogger
+
+  // View mode (disables mutations)
+  isView?: boolean
+
+  // Cross-tab sync
+  crossTab?: { enabled?: boolean; name?: string }
+
+  /** @internal Used by createSupabaseStores to inject shared queue */
+  _queue?: unknown
+
+  // Extension
+  extend?: (
+    set: StoreApi<TableStore<Row, InsertRow, UpdateRow>>["setState"],
+    get: StoreApi<TableStore<Row, InsertRow, UpdateRow>>["getState"],
+    store: StoreApi<TableStore<Row, InsertRow, UpdateRow>>,
+    supabase: SupabaseClient<DB>,
+  ) => Extensions
+}
+
+// ─── Bulk Factory Options ────────────────────────────────────────────
+
+export type CreateSupabaseStoresOptions<
+  DB,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = {
+  supabase: SupabaseClient<DB>
+  schema?: SchemaName
+  tables: TableNames<DB, SchemaName>[]
+
+  // Global defaults
+  persistence?: { adapter: PersistenceAdapter }
+  network?: NetworkStatusAdapter
+  realtime?: { enabled?: boolean }
+  conflict?: ConflictConfig
+  /** Pass the `immer` middleware from `zustand/middleware/immer` */
+  immer?: (config: any) => any
+  devtools?: boolean
+  logger?: SyncLogger
+
+  // Per-table overrides
+  tableOptions?: Partial<
+    Record<
+      TableNames<DB, SchemaName>,
+      {
+        primaryKey?: string
+        defaultFilters?: FilterDescriptor[]
+        defaultSort?: SortDescriptor[]
+        defaultSelect?: string
+        realtime?: {
+          enabled?: boolean
+          events?: RealtimeEvent[]
+          filter?: string
+        }
+        conflict?: ConflictConfig
+      }
+    >
+  >
+
+  // Hydration
+  tableOrder?: TableNames<DB, SchemaName>[]
+  fetchRemoteOnBoot?: boolean
+
+  // Auth
+  auth?: boolean
+}
+
+/** Return type of createSupabaseStores */
+export type SupabaseStores<
+  DB,
+  SchemaName extends string & keyof DB = "public" & keyof DB,
+> = {
+  [TableName in TableNames<DB, SchemaName>]: StoreApi<
+    TableStore<
+      TableRow<DB, TableName, SchemaName>,
+      TableInsert<DB, TableName, SchemaName>,
+      TableUpdate<DB, TableName, SchemaName>
+    >
+  >
+} & {
+  auth: StoreApi<AuthStore>
+  _supabase: SupabaseClient<DB>
+  _destroy: () => void
+}
