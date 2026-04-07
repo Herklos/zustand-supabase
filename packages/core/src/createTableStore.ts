@@ -42,10 +42,10 @@ export function createTableStore<
     defaultSort,
     defaultSelect,
     persistence,
-    offlineQueue: _offlineQueue,
-    network: _network,
-    realtime: _realtime,
-    conflict: _conflict,
+    offlineQueue: offlineQueueOpts,
+    network: networkOpts,
+    realtime: realtimeOpts,
+    conflict: conflictOpts,
     logger = noopLogger,
     isView = false,
     immer: immerMiddleware,
@@ -65,6 +65,22 @@ export function createTableStore<
     )
   }
   const primaryKey = typeof rawPrimaryKey === "string" ? rawPrimaryKey : rawPrimaryKey[0]!
+
+  // Warn about options that only work via createSupabaseStores
+  if (!_queue) {
+    if (realtimeOpts?.enabled) {
+      console.warn(`[zs:${table}] "realtime" option requires createSupabaseStores(). Use createSupabaseStores() or manually set up RealtimeManager + bindRealtimeToStore().`)
+    }
+    if (offlineQueueOpts?.enabled) {
+      console.warn(`[zs:${table}] "offlineQueue" option requires createSupabaseStores(). Use createSupabaseStores() or manually create an OfflineQueue.`)
+    }
+    if (conflictOpts) {
+      console.warn(`[zs:${table}] "conflict" option requires createSupabaseStores() with realtime enabled. Configure conflict resolution via bindRealtimeToStore().`)
+    }
+    if (networkOpts) {
+      console.warn(`[zs:${table}] "network" option requires createSupabaseStores(). Use createSupabaseStores() or manually wire NetworkStatusAdapter.`)
+    }
+  }
 
   // Track last fetch options for refetch and generation counter for stale response detection
   let lastFetchOptions: FetchOptions<Row> | undefined
