@@ -344,6 +344,163 @@ describe("createTableStore", () => {
     })
   })
 
+  describe("cacheStrategy", () => {
+    describe("merge mode", () => {
+      it("accumulates records across fetches while order reflects latest query", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        // First fetch: all todos
+        await store.getState().fetch()
+        expect(store.getState().records.size).toBe(3)
+        expect(store.getState().order).toEqual([1, 2, 3])
+
+        // Second fetch: only completed todos (id=2)
+        await store.getState().fetch({ filters: [{ column: "completed", op: "eq", value: true }] })
+
+        // Records should still have all 3 (accumulated)
+        expect(store.getState().records.size).toBe(3)
+        expect(store.getState().records.has(1)).toBe(true)
+        expect(store.getState().records.has(2)).toBe(true)
+        expect(store.getState().records.has(3)).toBe(true)
+
+        // Order should reflect only the latest query
+        expect(store.getState().order).toEqual([2])
+      })
+
+      it("updates existing non-pending records with fresh data", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        await store.getState().fetch()
+        const oldRecord = store.getState().records.get(1)
+        expect(oldRecord?.title).toBe("Buy milk")
+
+        // Mutate server data
+        supabase._tables.todos[0] = { ...supabase._tables.todos[0], title: "Buy eggs" }
+
+        // Re-fetch all - should update the record
+        await store.getState().fetch()
+        expect(store.getState().records.get(1)?.title).toBe("Buy eggs")
+      })
+
+      it("does not overwrite pending records", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        // Simulate a pending record with id=1
+        store.getState().setRecord(1, {
+          id: 1,
+          title: "Pending version",
+          completed: false,
+          created_at: "",
+          updated_at: "",
+          _zs_pending: "update",
+        } as any)
+
+        await store.getState().fetch()
+
+        // Pending record should keep its local version
+        expect(store.getState().records.get(1)?.title).toBe("Pending version")
+        expect(store.getState().records.get(1)?._zs_pending).toBe("update")
+        // But it should appear in order since it's in the fetch results
+        expect(store.getState().order).toContain(1)
+      })
+
+      it("preserves pending rows not in the latest query at end of order", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        // Set a pending record with id=999 (not in server data)
+        store.getState().setRecord(999, {
+          id: 999,
+          title: "New pending",
+          completed: false,
+          created_at: "",
+          updated_at: "",
+          _zs_pending: "insert",
+        } as any)
+
+        await store.getState().fetch()
+
+        // Order: all 3 fetched rows + pending 999 at the end
+        expect(store.getState().order).toEqual([1, 2, 3, 999])
+        expect(store.getState().records.has(999)).toBe(true)
+      })
+    })
+
+    describe("per-fetch override", () => {
+      it("allows merge override on a replace-mode store", async () => {
+        const store = createStore() // default: replace
+
+        await store.getState().fetch()
+        expect(store.getState().records.size).toBe(3)
+
+        // Fetch completed only with merge override
+        await store.getState().fetch({
+          filters: [{ column: "completed", op: "eq", value: true }],
+          cacheStrategy: "merge",
+        })
+
+        // Records accumulated (merge), order reflects latest query
+        expect(store.getState().records.size).toBe(3)
+        expect(store.getState().order).toEqual([2])
+      })
+
+      it("allows replace override on a merge-mode store", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        await store.getState().fetch()
+        expect(store.getState().records.size).toBe(3)
+
+        // Fetch completed only with replace override
+        await store.getState().fetch({
+          filters: [{ column: "completed", op: "eq", value: true }],
+          cacheStrategy: "replace",
+        })
+
+        // Only completed record remains (replace mode)
+        expect(store.getState().records.size).toBe(1)
+        expect(store.getState().order).toEqual([2])
+      })
+    })
+
+    describe("clearAndFetch", () => {
+      it("clears all records then fetches fresh", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        // Accumulate data
+        await store.getState().fetch()
+        await store.getState().fetch({ filters: [{ column: "completed", op: "eq", value: true }] })
+        expect(store.getState().records.size).toBe(3) // accumulated
+
+        // Clear and fetch only completed
+        const result = await store.getState().clearAndFetch({
+          filters: [{ column: "completed", op: "eq", value: true }],
+        })
+
+        // Should only have the completed record (replace was forced)
+        expect(store.getState().records.size).toBe(1)
+        expect(store.getState().order).toEqual([2])
+        expect(result).toHaveLength(1)
+      })
+    })
+
+    describe("replace mode (default)", () => {
+      it("replaces all records on each fetch", async () => {
+        const store = createStore() // default: replace
+
+        await store.getState().fetch()
+        expect(store.getState().records.size).toBe(3)
+
+        // Fetch only completed
+        await store.getState().fetch({
+          filters: [{ column: "completed", op: "eq", value: true }],
+        })
+
+        // Only completed record should remain
+        expect(store.getState().records.size).toBe(1)
+        expect(store.getState().order).toEqual([2])
+      })
+    })
+  })
+
   describe("extend", () => {
     it("allows extending the store with custom actions", () => {
       const store = createTableStore<any, Todo, Partial<Todo>, Partial<Todo>, { completedCount: () => number }>({

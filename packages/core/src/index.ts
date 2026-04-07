@@ -29,6 +29,8 @@ export type {
   // Persistence
   PersistenceAdapter,
   NetworkStatusAdapter,
+  // Cache
+  CacheStrategy,
   // Conflict
   ConflictStrategy,
   ConflictResolver,

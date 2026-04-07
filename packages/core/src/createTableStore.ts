@@ -51,6 +51,7 @@ export function createTableStore<
     immer: immerMiddleware,
     devtools: devtoolsOption,
     validate,
+    cacheStrategy: defaultCacheStrategy = "replace",
     _queue,
     extend,
   } = options
@@ -234,16 +235,51 @@ export function createTableStore<
               )
             }
 
-            const { records, order } = rowsToMap(data)
+            // Resolve effective strategy: per-fetch option > store-level default
+            const effectiveStrategy = fetchOptions?.cacheStrategy ?? defaultCacheStrategy
 
-            // Preserve rows with pending mutations
-            const currentState = get()
-            for (const [id, existing] of currentState.records) {
-              if (existing._zs_pending && !records.has(id)) {
-                records.set(id, existing)
+            let records: Map<string | number, TrackedRow<Row>>
+            let order: (string | number)[]
+
+            if (effectiveStrategy === "merge") {
+              // Merge mode: records accumulate, order reflects latest query
+              const currentState = get()
+              records = new Map(currentState.records)
+              order = []
+
+              for (const row of data) {
+                const id = (row as Record<string, unknown>)[primaryKey] as string | number
+                const existing = records.get(id)
+                if (existing?._zs_pending) {
+                  // Keep pending version but include in order
+                  order.push(id)
+                  continue
+                }
+                records.set(id, row as TrackedRow<Row>)
                 order.push(id)
-              } else if (existing._zs_pending && records.has(id)) {
-                records.set(id, existing)
+              }
+
+              // Preserve pending rows not in the latest query at the end of order
+              for (const [id, existing] of currentState.records) {
+                if (existing._zs_pending && !order.includes(id)) {
+                  order.push(id)
+                }
+              }
+            } else {
+              // Replace mode (default): existing behavior
+              const mapped = rowsToMap(data)
+              records = mapped.records
+              order = mapped.order
+
+              // Preserve rows with pending mutations
+              const currentState = get()
+              for (const [id, existing] of currentState.records) {
+                if (existing._zs_pending && !records.has(id)) {
+                  records.set(id, existing)
+                  order.push(id)
+                } else if (existing._zs_pending && records.has(id)) {
+                  records.set(id, existing)
+                }
               }
             }
 
@@ -775,6 +811,29 @@ export function createTableStore<
           return { ...prev, records, order }
         })
         persistIfConfigured()
+      },
+
+      async clearAndFetch(fetchOpts) {
+        // Clear records
+        if (persistTimer) {
+          clearTimeout(persistTimer)
+          persistTimer = null
+        }
+        set({
+          records: new Map(),
+          order: [],
+          error: null,
+          lastFetchedAt: null,
+        } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
+        if (persistence) {
+          persistence.adapter
+            .removeItem(persistenceKey)
+            .catch((err) => {
+              logger.mutationError(table, "PERSIST" as any, err instanceof Error ? err.message : String(err))
+            })
+        }
+        // Fetch with replace strategy forced
+        return actions.fetch({ ...fetchOpts, cacheStrategy: "replace" })
       },
 
       // ── Realtime (stub — implemented in realtimeBindings) ─────
