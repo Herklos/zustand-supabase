@@ -55,8 +55,15 @@ export function createTableStore<
     extend,
   } = options
 
-  // Normalize composite PK to string for internal Map key usage
-  // For composite keys, consumers should use encodeKey/applyPkFilters utilities
+  // Composite primary keys are supported via the encodeKey/applyPkFilters utilities.
+  // createTableStore currently operates on a single PK column for Map key usage.
+  // If an array PK is passed, throw to prevent silent data corruption.
+  if (Array.isArray(rawPrimaryKey) && rawPrimaryKey.length > 1) {
+    throw new Error(
+      `createTableStore does not yet support composite primary keys (received [${rawPrimaryKey.join(", ")}] for table "${table}"). ` +
+      `Use the encodeKey/applyPkFilters utilities from "zustand-supabase" for composite key tables.`,
+    )
+  }
   const primaryKey = typeof rawPrimaryKey === "string" ? rawPrimaryKey : rawPrimaryKey[0]!
 
   // Track last fetch options for refetch
@@ -103,12 +110,14 @@ export function createTableStore<
       return { records, order }
     }
 
+    const persistenceKey = persistence?.key ?? `zs:${schema}:${table}`
+
     function persistIfConfigured(): void {
       if (persistence) {
         const state = get()
         const data = recordsToArray(state.records, state.order)
         persistence.adapter
-          .setItem(`zs:${schema}:${table}`, data)
+          .setItem(persistenceKey, data)
           .catch((err) => {
             logger.mutationError(table, "PERSIST" as any, err instanceof Error ? err.message : String(err))
           })
@@ -585,7 +594,7 @@ export function createTableStore<
         } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
         if (persistence) {
           persistence.adapter
-            .removeItem(`zs:${schema}:${table}`)
+            .removeItem(persistenceKey)
             .catch((err) => {
               logger.mutationError(table, "PERSIST" as any, err instanceof Error ? err.message : String(err))
             })
@@ -629,7 +638,7 @@ export function createTableStore<
         >)
 
         try {
-          const key = persistence.key ?? `zs:${schema}:${table}`
+          const key = persistenceKey
           const data = await persistence.adapter.getItem<Row[]>(key)
 
           if (data && Array.isArray(data)) {

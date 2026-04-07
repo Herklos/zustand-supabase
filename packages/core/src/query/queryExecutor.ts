@@ -77,6 +77,9 @@ export function applyFilters(
         })
         break
       }
+      case "match":
+        q = q.match(f.value as Record<string, unknown>)
+        break
       case "not":
         q = q.not(f.column, "eq", f.value)
         break
