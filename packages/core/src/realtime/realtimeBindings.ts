@@ -87,16 +87,24 @@ export function bindRealtimeToStore<
           records.set(id, row as TrackedRow<Row>)
         }
 
-        return { ...prev, records }
+        // Ensure row is in order (may be new to this store)
+        const order = [...prev.order] as (string | number)[]
+        if (!order.includes(id)) order.push(id)
+        return { ...prev, records, order }
       })
     },
 
     onDelete(oldRow: Partial<Row>) {
       store.setState((prev: any) => {
-        const records = new Map(prev.records) as Map<string | number, TrackedRow<Row>>
         const id = (oldRow as Record<string, unknown>)[primaryKey] as
           | string
           | number
+          | undefined
+
+        // Guard: PK may be missing if REPLICA IDENTITY is not FULL
+        if (id == null) return prev
+
+        const records = new Map(prev.records) as Map<string | number, TrackedRow<Row>>
 
         // Don't remove rows with pending mutations
         const existing = records.get(id)

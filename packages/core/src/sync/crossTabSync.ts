@@ -25,13 +25,16 @@ export function setupBroadcastSync(
 
   channel.onmessage = (event: MessageEvent<CrossTabPayload>) => {
     receiving = true
-    const records = new Map(event.data.records)
-    store.setState({
-      records,
-      order: event.data.order,
-      isRestoring: false,
-    } as Partial<SyncableState>)
-    receiving = false
+    try {
+      const records = new Map(event.data.records)
+      store.setState({
+        records,
+        order: event.data.order,
+        isRestoring: false,
+      } as Partial<SyncableState>)
+    } finally {
+      receiving = false
+    }
   }
 
   const unsub = store.subscribe((state, prev) => {
@@ -74,13 +77,16 @@ export function setupStorageFallback(
     try {
       const payload = JSON.parse(event.newValue) as CrossTabPayload
       receiving = true
-      const records = new Map(payload.records)
-      store.setState({
-        records,
-        order: payload.order,
-        isRestoring: false,
-      } as Partial<SyncableState>)
-      receiving = false
+      try {
+        const records = new Map(payload.records)
+        store.setState({
+          records,
+          order: payload.order,
+          isRestoring: false,
+        } as Partial<SyncableState>)
+      } finally {
+        receiving = false
+      }
     } catch (err) {
       console.warn(`[zs:crossTab:${name}] Failed to parse cross-tab data:`, err)
     }

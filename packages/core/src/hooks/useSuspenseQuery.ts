@@ -36,26 +36,34 @@ export function useSuspenseQuery<
   // THEN do Suspense throw logic
   const state = store.getState()
 
-  if (!state.lastFetchedAt && !state.isLoading) {
+  // If data hasn't been fetched yet (initial load or loading in progress)
+  if (!state.lastFetchedAt) {
     let promise = suspenseCache.get(store)
     if (!promise) {
-      promise = store.getState().fetch(options)
-      suspenseCache.set(store, promise)
-      // Prevent unhandled rejection — error boundary reads state.error
+      if (state.isLoading) {
+        // Another fetch is in progress — wait for it via subscription
+        promise = new Promise<void>((resolve) => {
+          const unsub = store.subscribe((s) => {
+            if (!(s as any).isLoading || (s as any).lastFetchedAt) {
+              unsub()
+              resolve()
+            }
+          })
+        })
+      } else {
+        // No fetch in progress — trigger one
+        promise = store.getState().fetch(options)
+      }
       promise.catch(() => {})
-      promise.finally(() => suspenseCache.delete(store))
+      suspenseCache.set(store, promise)
+      // Clear cache only after state has settled
+      promise.finally(() => {
+        if (store.getState().lastFetchedAt) {
+          suspenseCache.delete(store)
+        }
+      })
     }
     throw promise
-  }
-
-  if (state.isLoading && !state.lastFetchedAt) {
-    const promise = suspenseCache.get(store)
-    if (promise) throw promise
-    const newPromise = store.getState().fetch(options)
-    suspenseCache.set(store, newPromise)
-    newPromise.catch(() => {})
-    newPromise.finally(() => suspenseCache.delete(store))
-    throw newPromise
   }
 
   if (state.error) {
