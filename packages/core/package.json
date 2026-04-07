@@ -10,95 +10,94 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./hooks": {
       "types": "./dist/hooks/index.d.ts",
-      "import": "./dist/hooks/index.js",
-      "require": "./dist/hooks/index.cjs"
+      "import": "./dist/hooks/index.mjs",
+      "require": "./dist/hooks/index.js"
     },
     "./query": {
       "types": "./dist/query/filters.d.ts",
-      "import": "./dist/query/filters.js",
-      "require": "./dist/query/filters.cjs"
+      "import": "./dist/query/filters.mjs",
+      "require": "./dist/query/filters.js"
     },
     "./auth": {
       "types": "./dist/auth/authStore.d.ts",
-      "import": "./dist/auth/authStore.js",
-      "require": "./dist/auth/authStore.cjs"
+      "import": "./dist/auth/authStore.mjs",
+      "require": "./dist/auth/authStore.js"
     },
     "./realtime": {
       "types": "./dist/realtime/realtimeManager.d.ts",
-      "import": "./dist/realtime/realtimeManager.js",
-      "require": "./dist/realtime/realtimeManager.cjs"
+      "import": "./dist/realtime/realtimeManager.mjs",
+      "require": "./dist/realtime/realtimeManager.js"
     },
     "./persistence": {
       "types": "./dist/persistence/persistenceAdapter.d.ts",
-      "import": "./dist/persistence/persistenceAdapter.js",
-      "require": "./dist/persistence/persistenceAdapter.cjs"
+      "import": "./dist/persistence/persistenceAdapter.mjs",
+      "require": "./dist/persistence/persistenceAdapter.js"
     },
     "./rpc": {
       "types": "./dist/rpc/rpcAction.d.ts",
-      "import": "./dist/rpc/rpcAction.js",
-      "require": "./dist/rpc/rpcAction.cjs"
+      "import": "./dist/rpc/rpcAction.mjs",
+      "require": "./dist/rpc/rpcAction.js"
     },
     "./sync": {
       "types": "./dist/sync/crossTabSync.d.ts",
-      "import": "./dist/sync/crossTabSync.js",
-      "require": "./dist/sync/crossTabSync.cjs"
+      "import": "./dist/sync/crossTabSync.mjs",
+      "require": "./dist/sync/crossTabSync.js"
     },
     "./lifecycle": {
       "types": "./dist/lifecycle/appLifecycle.d.ts",
-      "import": "./dist/lifecycle/appLifecycle.js",
-      "require": "./dist/lifecycle/appLifecycle.cjs"
+      "import": "./dist/lifecycle/appLifecycle.mjs",
+      "require": "./dist/lifecycle/appLifecycle.js"
     },
     "./sync/background": {
       "types": "./dist/sync/backgroundSync.d.ts",
-      "import": "./dist/sync/backgroundSync.js",
-      "require": "./dist/sync/backgroundSync.cjs"
+      "import": "./dist/sync/backgroundSync.mjs",
+      "require": "./dist/sync/backgroundSync.js"
     },
     "./sync/selective": {
       "types": "./dist/sync/selectiveSync.d.ts",
-      "import": "./dist/sync/selectiveSync.js",
-      "require": "./dist/sync/selectiveSync.cjs"
+      "import": "./dist/sync/selectiveSync.mjs",
+      "require": "./dist/sync/selectiveSync.js"
     },
     "./sync/multiDevice": {
       "types": "./dist/sync/multiDeviceSync.d.ts",
-      "import": "./dist/sync/multiDeviceSync.js",
-      "require": "./dist/sync/multiDeviceSync.cjs"
+      "import": "./dist/sync/multiDeviceSync.mjs",
+      "require": "./dist/sync/multiDeviceSync.js"
     },
     "./sync/metrics": {
       "types": "./dist/sync/syncMetrics.d.ts",
-      "import": "./dist/sync/syncMetrics.js",
-      "require": "./dist/sync/syncMetrics.cjs"
+      "import": "./dist/sync/syncMetrics.mjs",
+      "require": "./dist/sync/syncMetrics.js"
     },
     "./persistence/encrypted": {
       "types": "./dist/persistence/encryptedAdapter.d.ts",
-      "import": "./dist/persistence/encryptedAdapter.js",
-      "require": "./dist/persistence/encryptedAdapter.cjs"
+      "import": "./dist/persistence/encryptedAdapter.mjs",
+      "require": "./dist/persistence/encryptedAdapter.js"
     },
     "./persistence/quota": {
       "types": "./dist/persistence/storageQuota.d.ts",
-      "import": "./dist/persistence/storageQuota.js",
-      "require": "./dist/persistence/storageQuota.cjs"
+      "import": "./dist/persistence/storageQuota.mjs",
+      "require": "./dist/persistence/storageQuota.js"
     },
     "./persistence/schemaVersion": {
       "types": "./dist/persistence/schemaVersion.d.ts",
-      "import": "./dist/persistence/schemaVersion.js",
-      "require": "./dist/persistence/schemaVersion.cjs"
+      "import": "./dist/persistence/schemaVersion.mjs",
+      "require": "./dist/persistence/schemaVersion.js"
     },
     "./mutation/audit": {
       "types": "./dist/mutation/conflictAudit.d.ts",
-      "import": "./dist/mutation/conflictAudit.js",
-      "require": "./dist/mutation/conflictAudit.cjs"
+      "import": "./dist/mutation/conflictAudit.mjs",
+      "require": "./dist/mutation/conflictAudit.js"
     }
   },
   "files": [
