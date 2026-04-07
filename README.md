@@ -1,6 +1,10 @@
-# zustand-supabase
+<p align="center">
+  <img src="assets/logo.png" alt="zustand-supabase" width="200" />
+</p>
 
-Type-safe Zustand stores auto-generated from your Supabase schema. Offline-first, realtime, with optimistic updates.
+<h1 align="center">zustand-supabase</h1>
+
+<p align="center">Type-safe Zustand stores auto-generated from your Supabase schema. Offline-first, realtime, with optimistic updates.</p>
 
 ## Features
 
