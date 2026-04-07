@@ -316,27 +316,32 @@ export function createTableStore<
         const start = Date.now()
         logger.mutationStart(table, "INSERT")
 
-        // Optimistic apply all rows
+        // Build optimistic rows
         const tempIds: (string | number)[] = []
+        const optimisticRows: TrackedRow<Row>[] = []
         for (const row of rows) {
           const tempId =
             (row as Record<string, unknown>)[primaryKey] ??
             createTempId()
           tempIds.push(tempId as string | number)
-
-          set((prev) => {
-            const records = new Map(prev.records)
-            const order = [...prev.order]
-            records.set(tempId as string | number, {
-              ...(row as unknown as Row),
-              [primaryKey]: tempId,
-              _zs_pending: "insert",
-              _zs_optimistic: true,
-            } as TrackedRow<Row>)
-            order.push(tempId as string | number)
-            return { ...prev, records, order, error: null }
-          })
+          optimisticRows.push({
+            ...(row as unknown as Row),
+            [primaryKey]: tempId,
+            _zs_pending: "insert",
+            _zs_optimistic: true,
+          } as TrackedRow<Row>)
         }
+
+        // Single batched optimistic apply
+        set((prev) => {
+          const records = new Map(prev.records)
+          const order = [...prev.order]
+          for (let i = 0; i < tempIds.length; i++) {
+            records.set(tempIds[i]!, optimisticRows[i]!)
+            order.push(tempIds[i]!)
+          }
+          return { ...prev, records, order, error: null }
+        })
 
         // Batched remote insert
         const { data, error } = await fromTable(supabase as unknown as SupabaseClient, table, schema)
@@ -507,8 +512,16 @@ export function createTableStore<
         set((prev) => {
           const records = new Map(prev.records)
           const order = [...prev.order]
+
+          // Clean up optimistic entry if server returned a different ID
+          if (optimisticId && optimisticId !== id) {
+            records.delete(optimisticId)
+            const idx = order.indexOf(optimisticId)
+            if (idx >= 0) order[idx] = id
+          }
+
           records.set(id, serverRow as TrackedRow<Row>)
-          if (!prev.records.has(id)) order.push(id)
+          if (!prev.records.has(id) && !order.includes(id)) order.push(id)
           return { ...prev, records, order, error: null }
         })
 
@@ -522,8 +535,9 @@ export function createTableStore<
         const start = Date.now()
         logger.mutationStart(table, "DELETE")
 
-        // Snapshot for rollback
+        // Snapshot for rollback (including position in order)
         const snapshot = get().records.get(id)
+        const originalOrder = [...get().order]
 
         // Optimistic remove
         set((prev) => {
@@ -539,16 +553,14 @@ export function createTableStore<
           .eq(primaryKey, id as any)
 
         if (error) {
-          // Rollback
+          // Rollback — restore original position
           logger.mutationError(table, "DELETE", error.message)
           set((prev) => {
             const records = new Map(prev.records)
-            const order = [...prev.order]
             if (snapshot) {
               records.set(id, snapshot)
-              order.push(id)
             }
-            return { ...prev, records, order, error: new Error(error.message) }
+            return { ...prev, records, order: originalOrder, error: new Error(error.message) }
           })
           throw new Error(error.message)
         }

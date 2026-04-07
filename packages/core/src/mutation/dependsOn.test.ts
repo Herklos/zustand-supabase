@@ -89,7 +89,7 @@ describe("OfflineQueue dependsOn enforcement", () => {
 
   it("cascades rollback when dependency is rolled back", async () => {
     const onRollback = vi.fn()
-    const queue = new OfflineQueue({ maxRetries: 1, onRollback })
+    const queue = new OfflineQueue({ maxRetries: 0, onRollback })
 
     const failingExecutor = vi.fn().mockRejectedValue(new Error("permanent"))
     queue.registerExecutor("todos", failingExecutor)

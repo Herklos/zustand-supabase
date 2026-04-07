@@ -264,7 +264,7 @@ export class OfflineQueue {
             err instanceof Error ? err.message : String(err)
           mutation.lastError = errorMessage
 
-          if (mutation.retryCount >= this.maxRetries) {
+          if (mutation.retryCount > this.maxRetries) {
             mutation.status = "rolled_back"
             result.rolledBack.push(mutation.id)
             rolledBackIds.add(mutation.id)

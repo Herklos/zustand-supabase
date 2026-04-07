@@ -220,7 +220,7 @@ describe("OfflineQueue", () => {
 
     it("rolls back after max retries", async () => {
       const onRollback = vi.fn()
-      const queue = new OfflineQueue({ maxRetries: 1, onRollback })
+      const queue = new OfflineQueue({ maxRetries: 0, onRollback })
       const executor = vi.fn().mockRejectedValue(new Error("Permanent error"))
 
       queue.registerExecutor("todos", executor)

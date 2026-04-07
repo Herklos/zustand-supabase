@@ -56,11 +56,9 @@ export function useSuspenseQuery<
       }
       promise.catch(() => {})
       suspenseCache.set(store, promise)
-      // Clear cache only after state has settled
+      // Always clear cache so retries can trigger a new fetch
       promise.finally(() => {
-        if (store.getState().lastFetchedAt) {
-          suspenseCache.delete(store)
-        }
+        suspenseCache.delete(store)
       })
     }
     throw promise

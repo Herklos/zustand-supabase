@@ -72,7 +72,13 @@ export async function incrementalSync<
             pendingMutations: [],
           }
           const resolved = resolveConflict(existing, row, options.conflict, context)
-          if (resolved) {
+          if (resolved === null) {
+            // null = conflict resolver says delete the row
+            records.delete(id)
+            const idx = order.indexOf(id)
+            if (idx >= 0) order.splice(idx, 1)
+            mergedCount++
+          } else {
             records.set(id, resolved as TrackedRow<Row>)
             mergedCount++
           }
