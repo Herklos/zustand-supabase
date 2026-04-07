@@ -30,7 +30,8 @@ export function useAuth(authStore: StoreApi<AuthStore>) {
   const error = useStore(authStore, (s) => s.error)
 
   useEffect(() => {
-    authStore.getState().initialize()
+    // Error is captured in authStore.error state; prevent unhandled rejection
+    authStore.getState().initialize().catch(() => {})
     const unsubscribe = authStore.getState().onAuthStateChange()
     return unsubscribe
   }, [authStore])

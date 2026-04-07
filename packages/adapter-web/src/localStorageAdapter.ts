@@ -30,7 +30,13 @@ export class LocalStorageAdapter implements PersistenceAdapter {
 
   async multiSet(entries: [string, unknown][]): Promise<void> {
     for (const [key, value] of entries) {
-      localStorage.setItem(key, JSON.stringify(value))
+      try {
+        localStorage.setItem(key, JSON.stringify(value))
+      } catch (err) {
+        throw new Error(
+          `Failed to persist data for key "${key}" during multiSet: ${err instanceof Error ? err.message : String(err)}. Consider using IndexedDBAdapter for larger datasets.`,
+        )
+      }
     }
   }
 

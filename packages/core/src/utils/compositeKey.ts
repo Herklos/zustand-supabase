@@ -50,7 +50,14 @@ export function applyPkFilters(
   if (typeof primaryKey === "string") {
     return builder.eq(primaryKey, id)
   }
-  const values = JSON.parse(String(id)) as unknown[]
+  let values: unknown[]
+  try {
+    values = JSON.parse(String(id)) as unknown[]
+  } catch {
+    throw new Error(
+      `Failed to decode composite primary key from "${String(id)}". Expected JSON-encoded array for key [${primaryKey.join(", ")}].`,
+    )
+  }
   let q = builder
   for (let i = 0; i < primaryKey.length; i++) {
     q = q.eq(primaryKey[i], values[i])
