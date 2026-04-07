@@ -362,10 +362,11 @@ export function createTableStore<
         if (error) {
           // Rollback all optimistic inserts
           logger.mutationError(table, "INSERT", error.message)
+          const tempIdSet = new Set(tempIds)
           set((prev) => {
             const records = new Map(prev.records)
             const order = prev.order.filter(
-              (o) => !tempIds.includes(o),
+              (o) => !tempIdSet.has(o),
             )
             for (const id of tempIds) records.delete(id)
             return { ...prev, records, order, error: new Error(error.message) }

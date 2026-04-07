@@ -128,10 +128,11 @@ export async function removeMany<
   }
 
   // Optimistic remove
+  const matchingIdSet = new Set(matchingIds)
   store.setState((prev: any) => {
     const records = new Map(prev.records)
     const order = (prev.order as (string | number)[]).filter(
-      (o) => !matchingIds.includes(o),
+      (o) => !matchingIdSet.has(o),
     )
     for (const id of matchingIds) {
       records.delete(id)
