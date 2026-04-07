@@ -60,8 +60,11 @@ export function useQuery<
   }, [store])
 
   // Initial fetch + refetch on filter/sort/deps changes
+  // Skip if data was fetched recently (deduplication window: 2s)
   useEffect(() => {
     if (!enabled) return
+    const { lastFetchedAt } = store.getState()
+    if (lastFetchedAt && Date.now() - lastFetchedAt < 2000) return
     // Error is captured in store.error state; prevent unhandled rejection
     fetch().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -175,7 +175,9 @@ export function createTableStore<
 
       async fetch(fetchOptions) {
         const thisGeneration = ++fetchGeneration
-        set({ isLoading: true, error: null } as Partial<
+        // Stale-while-revalidate: only show loading if no cached data exists
+        const hasData = get().records.size > 0
+        set({ isLoading: !hasData, error: null } as Partial<
           TableStore<Row, InsertRow, UpdateRow>
         >)
         lastFetchOptions = fetchOptions
