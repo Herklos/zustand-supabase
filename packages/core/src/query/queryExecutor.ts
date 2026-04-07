@@ -152,13 +152,12 @@ export async function executeQuery<Row>(
     builder = applySort(builder, options.sort as SortDescriptor[])
   }
 
-  if (options.limit != null) {
-    builder = builder.limit(options.limit)
-  }
-
   if (options.offset != null) {
+    // range() handles both offset and limit — don't also call .limit()
     const limit = options.limit ?? 1000
     builder = builder.range(options.offset, options.offset + limit - 1)
+  } else if (options.limit != null) {
+    builder = builder.limit(options.limit)
   }
 
   const { data, error, count } = await builder

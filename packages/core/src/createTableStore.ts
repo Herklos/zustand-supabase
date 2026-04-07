@@ -361,31 +361,26 @@ export function createTableStore<
         const serverRows = (data as unknown as Row[]) ?? []
         set((prev) => {
           const records = new Map(prev.records)
-          const order = [...prev.order]
 
-          // Remove temp entries
+          // Remove all temp entries from records
           for (const tempId of tempIds) {
             records.delete(tempId)
           }
 
-          // Add server rows
+          // Remove all temp IDs from order, preserving non-temp entries
+          const tempIdSet = new Set(tempIds)
+          const order = prev.order.filter((o) => !tempIdSet.has(o))
+
+          // Add server rows to records and order
           for (const serverRow of serverRows) {
             const serverId = (serverRow as Record<string, unknown>)[
               primaryKey
             ] as string | number
             records.set(serverId, serverRow as TrackedRow<Row>)
-            // Replace temp IDs in order array
-            const tempIdx = order.findIndex((o) => tempIds.includes(o))
-            if (tempIdx >= 0) {
-              order[tempIdx] = serverId
-            } else {
-              order.push(serverId)
-            }
+            order.push(serverId)
           }
 
-          // Remove remaining temp IDs from order
-          const finalOrder = order.filter((o) => !tempIds.includes(o) || records.has(o))
-          return { ...prev, records, order: finalOrder }
+          return { ...prev, records, order }
         })
 
         logger.mutationSuccess(table, "INSERT", Date.now() - start)
@@ -612,8 +607,9 @@ export function createTableStore<
             // Don't overwrite pending records
             const existing = records.get(id)
             if (existing?._zs_pending) continue
+            const isNew = !records.has(id)
             records.set(id, row as TrackedRow<Row>)
-            if (!prev.records.has(id)) order.push(id)
+            if (isNew) order.push(id)
           }
           return { ...prev, records, order }
         })

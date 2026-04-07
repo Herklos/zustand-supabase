@@ -47,13 +47,11 @@ export async function prefetch<Row = Record<string, unknown>>(
       builder = applySort(builder, options.sort as SortDescriptor[])
     }
 
-    if (options?.limit != null) {
-      builder = builder.limit(options.limit)
-    }
-
     if (options?.offset != null) {
       const limit = options.limit ?? 1000
       builder = builder.range(options.offset, options.offset + limit - 1)
+    } else if (options?.limit != null) {
+      builder = builder.limit(options.limit)
     }
 
     const { data, error } = await builder

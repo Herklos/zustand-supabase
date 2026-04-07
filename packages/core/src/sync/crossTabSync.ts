@@ -21,21 +21,22 @@ export function setupBroadcastSync(
   name: string,
 ): () => void {
   const channel = new BroadcastChannel(`zs:${name}`)
-  let lastReceivedOrder: (string | number)[] | null = null
+  let receiving = false
 
   channel.onmessage = (event: MessageEvent<CrossTabPayload>) => {
-    lastReceivedOrder = event.data.order
+    receiving = true
     const records = new Map(event.data.records)
     store.setState({
       records,
       order: event.data.order,
       isRestoring: false,
     } as Partial<SyncableState>)
+    receiving = false
   }
 
   const unsub = store.subscribe((state, prev) => {
     // Don't echo back received data
-    if (state.order === lastReceivedOrder) return
+    if (receiving) return
     // Don't broadcast during restore
     if (state.isRestoring) return
     // Only broadcast if records or order changed
@@ -66,19 +67,20 @@ export function setupStorageFallback(
   name: string,
 ): () => void {
   const key = `zs:broadcast:${name}`
-  let lastReceivedOrder: (string | number)[] | null = null
+  let receiving = false
 
   const onStorage = (event: StorageEvent) => {
     if (event.key !== key || !event.newValue) return
     try {
       const payload = JSON.parse(event.newValue) as CrossTabPayload
-      lastReceivedOrder = payload.order
+      receiving = true
       const records = new Map(payload.records)
       store.setState({
         records,
         order: payload.order,
         isRestoring: false,
       } as Partial<SyncableState>)
+      receiving = false
     } catch (err) {
       console.warn(`[zs:crossTab:${name}] Failed to parse cross-tab data:`, err)
     }
@@ -89,7 +91,7 @@ export function setupStorageFallback(
   }
 
   const unsub = store.subscribe((state, prev) => {
-    if (state.order === lastReceivedOrder) return
+    if (receiving) return
     if (state.isRestoring) return
     if (state.records === prev.records && state.order === prev.order) return
 
