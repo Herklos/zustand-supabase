@@ -76,9 +76,9 @@ export const todosStore = createTableStore<
   primaryKey: "id",
   defaultSort: [{ column: "created_at", ascending: false }],
   persistence: { adapter: new LocalStorageAdapter() },
-  network: new WebNetworkStatus(),
-  realtime: { enabled: true },
-  conflict: { strategy: "last-write-wins", timestampColumn: "updated_at" },
+  // Note: realtime, conflict, network, and offlineQueue options require
+  // createSupabaseStores(). For standalone stores, use manual setup with
+  // RealtimeManager + bindRealtimeToStore, or use createSupabaseStores above.
   devtools: { name: "todos" },
   crossTab: { enabled: true },
   validate: {

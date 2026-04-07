@@ -103,9 +103,6 @@ const todosStore = createTableStore<Database, TodoRow, TodoInsert, TodoUpdate>({
   schema: 'public',                    // default: 'public'
   defaultSort: [{ column: 'created_at', ascending: false }],
   persistence: { adapter: new LocalStorageAdapter() },
-  network: new WebNetworkStatus(),
-  realtime: { enabled: true, events: ['INSERT', 'UPDATE', 'DELETE'] },
-  conflict: { strategy: 'last-write-wins', timestampColumn: 'updated_at' },
   devtools: true,
   crossTab: { enabled: true },
   validate: {
@@ -122,6 +119,8 @@ const todosStore = createTableStore<Database, TodoRow, TodoInsert, TodoUpdate>({
   }),
 })
 ```
+
+> **Note:** `realtime`, `conflict`, `network`, and `offlineQueue` options require `createSupabaseStores()` which wires up the shared RealtimeManager and OfflineQueue. Use `createSupabaseStores()` for full-featured stores, or manually set up these features with `RealtimeManager`, `bindRealtimeToStore`, and `OfflineQueue`.
 
 #### `createSupabaseStores(options)`
 
@@ -282,17 +281,44 @@ const url = getPublicUrl('user-123.png')
 Type-safe filter DSL matching Supabase's PostgREST operators:
 
 ```typescript
-import { eq, neq, gt, gte, lt, lte, like, ilike, is, inValues, contains, match } from 'zustand-supabase'
+import {
+  eq, neq, gt, gte, lt, lte,
+  like, ilike, is, inValues,
+  contains, containedBy, overlaps, textSearch,
+  match, asc, desc,
+} from 'zustand-supabase'
 
-// Individual filters
+// Comparison
 eq('status', 'active')
+neq('status', 'archived')
 gt('priority', 3)
-ilike('title', '%milk%')
-inValues('category', ['work', 'personal'])
+gte('priority', 3)
+lt('priority', 10)
+lte('priority', 10)
+
+// Pattern matching
+like('title', '%milk%')         // case-sensitive
+ilike('title', '%milk%')        // case-insensitive
+
+// Null/boolean check
 is('deleted_at', null)
+
+// Array/set operations
+inValues('category', ['work', 'personal'])
+contains('tags', ['urgent'])
+containedBy('tags', ['urgent', 'important'])
+overlaps('tags', ['urgent'])
+
+// Full-text search
+textSearch('body', 'hello & world', { type: 'websearch' })
 
 // Match shorthand (multiple eq)
 match({ status: 'active', priority: 1 })
+
+// Advanced: not and filter with custom operator
+// These accept { op, value } objects for the inner operator
+{ column: 'status', op: 'not', value: { op: 'eq', value: 'archived' } }
+{ column: 'priority', op: 'filter', value: { op: 'gt', value: 3 } }
 ```
 
 ### Fluent Query Builder
@@ -418,6 +444,16 @@ createTableStore({
   },
 })
 ```
+
+### Concurrency Safety
+
+The library handles concurrent operations safely:
+
+- **Concurrent fetch()**: Uses a generation counter — stale responses from superseded fetches are discarded automatically
+- **Concurrent mutations**: Uses compare-and-swap (CAS) rollback with `_zs_mutationId` — a failed update only rolls back if its own optimistic write is still current, preventing it from destroying a concurrent successful mutation's data
+- **Realtime during mutations**: Rows with `_zs_pending` metadata are protected from being overwritten by realtime INSERT/UPDATE/DELETE events
+- **Cross-tab sync**: Pending optimistic rows are preserved when receiving state from other tabs
+- **Offline queue**: Flush uses a `flushing` guard to prevent concurrent execution, and in-place pruning preserves mutations enqueued during a flush
 
 ### Auth Integration
 
