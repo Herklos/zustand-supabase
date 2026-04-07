@@ -170,98 +170,109 @@ export function createTableStore<
 
     // ── Actions ───────────────────────────────────────────────────
 
+    // In-flight fetch deduplication
+    let inflightPromise: Promise<TrackedRow<Row>[]> | null = null
+
     const actions: TableStoreActions<Row, InsertRow, UpdateRow> = {
       // ── Query ─────────────────────────────────────────────────
 
       async fetch(fetchOptions) {
-        const thisGeneration = ++fetchGeneration
-        // Stale-while-revalidate: only show loading if no cached data exists
-        const hasData = get().records.size > 0
-        set({ isLoading: !hasData, error: null } as Partial<
-          TableStore<Row, InsertRow, UpdateRow>
-        >)
-        lastFetchOptions = fetchOptions
+        // Deduplicate concurrent fetches — return in-flight promise if one exists
+        if (inflightPromise) return inflightPromise
 
-        const start = Date.now()
-        logger.fetchStart(table)
+        const doFetch = async (): Promise<TrackedRow<Row>[]> => {
+          const thisGeneration = ++fetchGeneration
+          // Stale-while-revalidate: only show loading if no cached data exists
+          const hasData = get().records.size > 0
+          set({ isLoading: !hasData, error: null } as Partial<
+            TableStore<Row, InsertRow, UpdateRow>
+          >)
+          lastFetchOptions = fetchOptions
 
-        try {
-          const opts: FetchOptions<Row> = {
-            ...fetchOptions,
-            filters: mergeFilters(fetchOptions?.filters),
-            sort: fetchOptions?.sort ?? defaultSort,
-            select: fetchOptions?.select ?? defaultSelect,
-          }
+          const start = Date.now()
+          logger.fetchStart(table)
 
-          const { data, error, count } = await executeQuery<Row>(
-            supabase as SupabaseClient,
-            table,
-            schema,
-            opts,
-          )
-
-          if (error) {
-            logger.fetchError(table, error.message)
-            if (thisGeneration === fetchGeneration) {
-              set({ isLoading: false, error } as Partial<
-                TableStore<Row, InsertRow, UpdateRow>
-              >)
+          try {
+            const opts: FetchOptions<Row> = {
+              ...fetchOptions,
+              filters: mergeFilters(fetchOptions?.filters),
+              sort: fetchOptions?.sort ?? defaultSort,
+              select: fetchOptions?.select ?? defaultSelect,
             }
-            return []
-          }
 
-          // Discard stale response if a newer fetch was initiated
-          if (thisGeneration !== fetchGeneration) {
-            return []
-          }
-
-          // Warn if result was likely truncated by Supabase's default row limit
-          if (
-            !opts.limit &&
-            count != null &&
-            data.length < count
-          ) {
-            logger.fetchError(
+            const { data, error, count } = await executeQuery<Row>(
+              supabase as SupabaseClient,
               table,
-              `Fetch returned ${data.length} of ${count} total rows. Use pagination or set a limit to retrieve all data.`,
+              schema,
+              opts,
             )
-          }
 
-          const { records, order } = rowsToMap(data)
-
-          // Preserve rows with pending mutations
-          const currentState = get()
-          for (const [id, existing] of currentState.records) {
-            if (existing._zs_pending && !records.has(id)) {
-              records.set(id, existing)
-              order.push(id)
-            } else if (existing._zs_pending && records.has(id)) {
-              records.set(id, existing)
+            if (error) {
+              logger.fetchError(table, error.message)
+              if (thisGeneration === fetchGeneration) {
+                set({ isLoading: false, error } as Partial<
+                  TableStore<Row, InsertRow, UpdateRow>
+                >)
+              }
+              return []
             }
-          }
 
-          logger.fetchSuccess(table, data.length, Date.now() - start)
-          set({
-            records,
-            order,
-            isLoading: false,
-            error: null,
-            lastFetchedAt: Date.now(),
-          } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
+            // Discard stale response if a newer fetch was initiated
+            if (thisGeneration !== fetchGeneration) {
+              return []
+            }
 
-          persistIfConfigured()
+            // Warn if result was likely truncated by Supabase's default row limit
+            if (
+              !opts.limit &&
+              count != null &&
+              data.length < count
+            ) {
+              logger.fetchError(
+                table,
+                `Fetch returned ${data.length} of ${count} total rows. Use pagination or set a limit to retrieve all data.`,
+              )
+            }
 
-          return recordsToArray(records, order)
-        } catch (err) {
-          logger.fetchError(table, err instanceof Error ? err.message : String(err))
-          if (thisGeneration === fetchGeneration) {
+            const { records, order } = rowsToMap(data)
+
+            // Preserve rows with pending mutations
+            const currentState = get()
+            for (const [id, existing] of currentState.records) {
+              if (existing._zs_pending && !records.has(id)) {
+                records.set(id, existing)
+                order.push(id)
+              } else if (existing._zs_pending && records.has(id)) {
+                records.set(id, existing)
+              }
+            }
+
+            logger.fetchSuccess(table, data.length, Date.now() - start)
             set({
+              records,
+              order,
               isLoading: false,
-              error: err instanceof Error ? err : new Error(String(err)),
+              error: null,
+              lastFetchedAt: Date.now(),
             } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
+
+            persistIfConfigured()
+
+            return recordsToArray(records, order)
+          } catch (err) {
+            logger.fetchError(table, err instanceof Error ? err.message : String(err))
+            if (thisGeneration === fetchGeneration) {
+              set({
+                isLoading: false,
+                error: err instanceof Error ? err : new Error(String(err)),
+              } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
+            }
+            return []
           }
-          return []
         }
+
+        inflightPromise = doFetch().finally(() => { inflightPromise = null })
+        return inflightPromise
       },
 
       async fetchOne(id) {
