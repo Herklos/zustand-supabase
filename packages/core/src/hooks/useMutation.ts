@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useCallback, useRef } from "react"
 import type { StoreApi } from "zustand"
 import type { TableStore, TrackedRow } from "../types.js"

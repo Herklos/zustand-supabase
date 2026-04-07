@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useMemo } from "react"
 import { useStore } from "zustand"
 import type { StoreApi } from "zustand"

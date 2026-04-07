@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useRef, useCallback } from "react"
 import { useStore } from "zustand"
 import { useShallow } from "zustand/react/shallow"

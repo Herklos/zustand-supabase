@@ -24,6 +24,8 @@ type OfflineQueueOptions = {
   network?: NetworkStatusAdapter
   maxRetries?: number
   flushDebounceMs?: number
+  /** Base delay for exponential backoff in ms (default: 1000) */
+  retryBaseDelay?: number
   logger?: SyncLogger
   onRollback?: (mutation: QueuedMutation) => void
   onTempIdResolved?: (
@@ -49,6 +51,7 @@ export class OfflineQueue {
   private readonly network?: NetworkStatusAdapter
   private readonly maxRetries: number
   private readonly flushDebounceMs: number
+  private readonly retryBaseDelay: number
   private readonly logger: SyncLogger
   private readonly onRollback?: (mutation: QueuedMutation) => void
   private readonly onTempIdResolved?: (
@@ -62,6 +65,7 @@ export class OfflineQueue {
     this.network = options.network
     this.maxRetries = options.maxRetries ?? 3
     this.flushDebounceMs = options.flushDebounceMs ?? 2000
+    this.retryBaseDelay = options.retryBaseDelay ?? 1000
     this.logger = options.logger ?? noopLogger
     this.onRollback = options.onRollback
     this.onTempIdResolved = options.onTempIdResolved
@@ -291,6 +295,17 @@ export class OfflineQueue {
         result.failed.length,
       )
 
+      // Schedule retry with backoff if there are failed mutations
+      if (result.failed.length > 0) {
+        const maxAttempt = Math.max(
+          ...this.queue
+            .filter((m) => m.status === "failed")
+            .map((m) => m.retryCount),
+          0,
+        )
+        this.scheduleFlush(maxAttempt)
+      }
+
       return result
     } finally {
       this.flushing = false
@@ -299,14 +314,24 @@ export class OfflineQueue {
 
   // ── Auto-flush ───────────────────────────────────────────────────
 
-  scheduleFlush(): void {
+  /** Calculate exponential backoff delay with jitter */
+  private getRetryDelay(attempt: number): number {
+    const exponential = this.retryBaseDelay * Math.pow(2, attempt)
+    const jitter = Math.random() * this.retryBaseDelay
+    return exponential + jitter
+  }
+
+  scheduleFlush(retryAttempt?: number): void {
     if (this.flushTimer) clearTimeout(this.flushTimer)
+    const delay = retryAttempt != null
+      ? this.getRetryDelay(retryAttempt)
+      : this.flushDebounceMs
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null
       this.flush().catch((err) => {
         this.logger.mutationError("__queue", "FLUSH" as any, err instanceof Error ? err.message : String(err))
       })
-    }, this.flushDebounceMs)
+    }, delay)
   }
 
   cancelFlush(): void {

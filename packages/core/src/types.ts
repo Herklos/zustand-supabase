@@ -402,7 +402,7 @@ export type CreateTableStoreOptions<
   supabase: SupabaseClient<DB>
   table: string
   schema?: string
-  primaryKey?: string
+  primaryKey?: string | string[]
 
   // Query defaults
   defaultFilters?: FilterDescriptor<Row>[]
@@ -439,6 +439,12 @@ export type CreateTableStoreOptions<
   /** Pass the `immer` middleware from `zustand/middleware/immer` to enable draft-based mutations */
   immer?: (config: any) => any
   devtools?: boolean | { name?: string }
+
+  // Validation
+  validate?: {
+    insert?: (data: InsertRow) => true | string[]
+    update?: (data: UpdateRow) => true | string[]
+  }
 
   // Logger
   logger?: SyncLogger
@@ -486,7 +492,7 @@ export type CreateSupabaseStoresOptions<
     Record<
       TableNames<DB, SchemaName>,
       {
-        primaryKey?: string
+        primaryKey?: string | string[]
         defaultFilters?: FilterDescriptor[]
         defaultSort?: SortDescriptor[]
         defaultSelect?: string

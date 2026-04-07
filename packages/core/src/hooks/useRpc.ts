@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { callRpc } from "../rpc/rpcAction.js"

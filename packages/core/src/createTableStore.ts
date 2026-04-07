@@ -36,7 +36,7 @@ export function createTableStore<
     supabase,
     table,
     schema = "public",
-    primaryKey = "id",
+    primaryKey: rawPrimaryKey = "id",
     defaultFilters,
     defaultSort,
     defaultSelect,
@@ -52,6 +52,10 @@ export function createTableStore<
     _queue,
     extend,
   } = options
+
+  // Normalize composite PK to string for internal Map key usage
+  // For composite keys, consumers should use encodeKey/applyPkFilters utilities
+  const primaryKey = typeof rawPrimaryKey === "string" ? rawPrimaryKey : rawPrimaryKey[0]!
 
   // Track last fetch options for refetch
   let lastFetchOptions: FetchOptions<Row> | undefined

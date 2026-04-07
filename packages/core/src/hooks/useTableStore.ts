@@ -1,3 +1,5 @@
+"use client"
+
 import { useStore } from "zustand"
 import { useShallow } from "zustand/react/shallow"
 import type { StoreApi } from "zustand"
