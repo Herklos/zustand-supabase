@@ -78,6 +78,7 @@ export async function incrementalSync<
             const idx = order.indexOf(id)
             if (idx >= 0) order.splice(idx, 1)
             mergedCount++
+            continue
           } else {
             records.set(id, resolved as TrackedRow<Row>)
             mergedCount++
@@ -89,7 +90,7 @@ export async function incrementalSync<
           mergedCount++
         }
 
-        // Ensure row is in order array (covers conflict-resolved path too)
+        // Ensure row is in order array (covers non-delete conflict-resolved path)
         if (!order.includes(id)) order.push(id)
       }
 
