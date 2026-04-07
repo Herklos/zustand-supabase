@@ -171,6 +171,7 @@ export type TableStoreActions<
   ) => Promise<TrackedRow<Row>>
   upsert: (row: InsertRow) => Promise<TrackedRow<Row>>
   remove: (id: string | number) => Promise<void>
+  removeWhere: (filters: FilterDescriptor<Row>[]) => Promise<void>
 
   // Local-only (no remote call)
   setRecord: (id: string | number, row: TrackedRow<Row>) => void

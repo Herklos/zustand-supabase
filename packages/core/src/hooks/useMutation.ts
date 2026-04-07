@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react"
 import type { StoreApi } from "zustand"
-import type { TableStore, TrackedRow } from "../types.js"
+import type { TableStore, TrackedRow, FilterDescriptor } from "../types.js"
 
 type MutationResult<
   Row,
@@ -14,6 +14,7 @@ type MutationResult<
   update: (id: string | number, changes: UpdateRow) => Promise<TrackedRow<Row>>
   upsert: (row: InsertRow) => Promise<TrackedRow<Row>>
   remove: (id: string | number) => Promise<void>
+  removeWhere: (filters: FilterDescriptor<Row>[]) => Promise<void>
   isLoading: boolean
   error: Error | null
 }
@@ -80,5 +81,11 @@ export function useMutation<
     [wrap],
   )
 
-  return { insert, insertMany, update, upsert, remove, isLoading, error }
+  const removeWhere = useCallback(
+    (filters: FilterDescriptor<Row>[]) =>
+      wrap(() => storeRef.current.getState().removeWhere(filters)),
+    [wrap],
+  )
+
+  return { insert, insertMany, update, upsert, remove, removeWhere, isLoading, error }
 }

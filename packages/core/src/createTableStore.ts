@@ -12,7 +12,7 @@ import type {
 } from "./types.js"
 import { noopLogger, createTempId } from "./types.js"
 import { runValidation } from "./mutation/validation.js"
-import { executeQuery, executeQueryOne, fromTable } from "./query/queryExecutor.js"
+import { executeQuery, executeQueryOne, fromTable, applyFilters } from "./query/queryExecutor.js"
 
 type StoreSet<Row, InsertRow, UpdateRow> = StoreApi<
   TableStore<Row, InsertRow, UpdateRow>
@@ -646,6 +646,61 @@ export function createTableStore<
             const records = new Map(prev.records)
             const order = [...prev.order]
             if (snapshot) {
+              records.set(id, snapshot)
+              if (!order.includes(id)) order.push(id)
+            }
+            return { ...prev, records, order, error: new Error(error.message) }
+          })
+          throw new Error(error.message)
+        }
+
+        logger.mutationSuccess(table, "DELETE", Date.now() - start)
+        persistIfConfigured()
+      },
+
+      async removeWhere(filters) {
+        assertNotView()
+        const start = Date.now()
+        logger.mutationStart(table, "DELETE")
+
+        // Find matching rows client-side for optimistic removal
+        const snapshots = new Map<string | number, TrackedRow<Row>>()
+        const current = get()
+        for (const [id, record] of current.records) {
+          const matches = filters.every((f) => {
+            const val = (record as Record<string, unknown>)[f.column as string]
+            switch (f.op) {
+              case "eq": return val === f.value
+              case "neq": return val !== f.value
+              default: return true // conservative: assume match for complex ops
+            }
+          })
+          if (matches) snapshots.set(id, record)
+        }
+
+        // Optimistic remove
+        if (snapshots.size > 0) {
+          set((prev) => {
+            const records = new Map(prev.records)
+            const removedIds = new Set(snapshots.keys())
+            const order = prev.order.filter((o) => !removedIds.has(o))
+            for (const id of removedIds) records.delete(id)
+            return { ...prev, records, order, error: null }
+          })
+        }
+
+        // Execute remote DELETE with filters
+        let query = fromTable(supabase as unknown as SupabaseClient, table, schema).delete()
+        query = applyFilters(query, filters as any[])
+        const { error } = await query
+
+        if (error) {
+          logger.mutationError(table, "DELETE", error.message)
+          // Rollback — restore all snapshots
+          set((prev) => {
+            const records = new Map(prev.records)
+            const order = [...prev.order]
+            for (const [id, snapshot] of snapshots) {
               records.set(id, snapshot)
               if (!order.includes(id)) order.push(id)
             }

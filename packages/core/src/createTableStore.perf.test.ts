@@ -269,4 +269,53 @@ describe("createTableStore performance optimizations", () => {
       expect(firstFetchedAt).toBeGreaterThan(0)
     })
   })
+
+  describe("removeWhere", () => {
+    it("removes matching rows optimistically and from server", async () => {
+      const store = createStore()
+      await store.getState().fetch()
+      expect(store.getState().records.size).toBe(2)
+
+      // Remove rows where completed === true (id: 2)
+      await store.getState().removeWhere([{ op: "eq", column: "completed", value: true }] as any)
+
+      expect(store.getState().records.size).toBe(1)
+      expect(store.getState().records.has(1)).toBe(true)
+      expect(store.getState().records.has(2)).toBe(false)
+    })
+
+    it("removes multiple matching rows", async () => {
+      const store = createStore()
+      await store.getState().fetch()
+
+      // Remove all rows where completed === false (ids: 1)
+      await store.getState().removeWhere([{ op: "eq", column: "completed", value: false }] as any)
+
+      expect(store.getState().records.size).toBe(1)
+      expect(store.getState().records.has(2)).toBe(true)
+    })
+
+    it("does nothing when no rows match", async () => {
+      const store = createStore()
+      await store.getState().fetch()
+
+      await store.getState().removeWhere([{ op: "eq", column: "title", value: "nonexistent" }] as any)
+
+      expect(store.getState().records.size).toBe(2)
+    })
+
+    it("supports multiple filter conditions", async () => {
+      const store = createStore()
+      await store.getState().fetch()
+
+      // Remove where completed=false AND title="Buy milk" — should match id: 1
+      await store.getState().removeWhere([
+        { op: "eq", column: "completed", value: false },
+        { op: "eq", column: "title", value: "Buy milk" },
+      ] as any)
+
+      expect(store.getState().records.size).toBe(1)
+      expect(store.getState().records.has(2)).toBe(true)
+    })
+  })
 })
