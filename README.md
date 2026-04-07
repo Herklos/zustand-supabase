@@ -15,10 +15,19 @@
 - **Type-safe** — filters, mutations, and hooks fully typed from your schema
 - **Platform adapters** — Web (localStorage/IndexedDB) and React Native (expo-sqlite/AsyncStorage)
 - **Cross-tab sync** via BroadcastChannel
+- **Multi-device sync** via Supabase Realtime broadcast
 - **Auth integration** with session-gated stores and RLS awareness
 - **React Suspense** and **Server Components** support
 - **Storage & Edge Functions** — full Supabase feature coverage
-- **Cursor pagination**, **incremental sync**, **cache TTL**
+- **Cursor pagination**, **incremental sync**, **selective sync**, **cache TTL**
+- **App lifecycle management** — auto-flush, session refresh, stale revalidation on foreground
+- **Background sync** — flush offline queue in background via expo-task-manager
+- **Data encryption at rest** — transparent encryption wrapper for any persistence adapter
+- **Storage quota management** — usage monitoring, per-table limits, LRU eviction
+- **Sync health monitoring** — latency percentiles, error rates, conflict tracking
+- **Conflict audit trail** — log and notify on conflict resolutions
+- **Schema versioning** — automatic cache invalidation on schema changes
+- **Optimistic UI helpers** — `useSyncStatus`, `useQueueStatus`, `usePendingChanges`
 
 ## Installation
 
@@ -64,7 +73,7 @@ export const stores = createSupabaseStores<Database>({
 ### 3. Use in React components
 
 ```tsx
-import { useQuery, useMutation, eq } from 'zustand-supabase'
+import { useQuery, useMutation, eq, isPending } from 'zustand-supabase'
 
 function TodoList() {
   const { data, isLoading } = useQuery(stores.todos, {
@@ -79,7 +88,7 @@ function TodoList() {
       {data.map(todo => (
         <li key={todo.id}>
           {todo.title}
-          {todo._zs_pending && <span> (saving...)</span>}
+          {isPending(todo) && <span> (saving...)</span>}
           <button onClick={() => remove(todo.id)}>Delete</button>
         </li>
       ))}
@@ -522,6 +531,177 @@ createTableStore({
 })
 ```
 
+### App Lifecycle
+
+Auto-flush queue, refresh auth, and revalidate stale data when the app returns to the foreground:
+
+```typescript
+import { setupAppLifecycle } from 'zustand-supabase'
+import { WebAppLifecycle } from 'zustand-supabase-adapter-web'
+// or: import { RNAppLifecycle } from 'zustand-supabase-adapter-react-native'
+
+const cleanup = setupAppLifecycle({
+  adapter: new WebAppLifecycle(),
+  stores: [stores.todos, stores.profiles],
+  authStore: stores.auth,
+  queue: offlineQueue,
+  flushQueueOnForeground: true,     // default
+  refreshAuthOnForeground: true,     // default
+  revalidateOnForeground: true,      // default
+  pauseRealtimeOnBackground: false,  // default
+  staleTTL: 5 * 60 * 1000,          // 5 minutes
+})
+```
+
+Or use the React hook:
+
+```tsx
+import { useAppLifecycle } from 'zustand-supabase'
+
+useAppLifecycle({
+  adapter: new WebAppLifecycle(),
+  stores: [stores.todos],
+  authStore: stores.auth,
+})
+```
+
+### Background Sync
+
+Flush the offline queue in the background on mobile:
+
+```typescript
+import { setupBackgroundSync } from 'zustand-supabase'
+import { RNBackgroundSync } from 'zustand-supabase-adapter-react-native'
+
+const cleanup = await setupBackgroundSync(offlineQueue, new RNBackgroundSync())
+// Cleanup: await cleanup()
+```
+
+### Multi-Device Sync
+
+Sync state across devices via Supabase Realtime broadcast:
+
+```typescript
+import { setupMultiDeviceSync } from 'zustand-supabase'
+
+const cleanup = setupMultiDeviceSync(supabase, {
+  todos: stores.todos,
+  profiles: stores.profiles,
+}, {
+  conflict: { strategy: 'last-write-wins', timestampColumn: 'updated_at' },
+  debounceMs: 1000,
+})
+```
+
+### Selective Sync
+
+Sync only relevant subsets of data:
+
+```typescript
+import { selectiveSync, syncAllByPriority } from 'zustand-supabase'
+
+// Sync only active todos
+await selectiveSync(supabase, 'todos', 'id', stores.todos, {
+  filters: [eq('status', 'active')],
+  timestampColumn: 'updated_at',
+})
+
+// Sync stores in priority order
+await syncAllByPriority([
+  { store: stores.todos, priority: 1 },
+  { store: stores.profiles, priority: 2 },
+])
+```
+
+### Data Encryption
+
+Transparently encrypt persisted data:
+
+```typescript
+import { EncryptedAdapter, createWebCryptoEncryption } from 'zustand-supabase'
+import { LocalStorageAdapter } from 'zustand-supabase-adapter-web'
+
+const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
+const adapter = new EncryptedAdapter(new LocalStorageAdapter(), createWebCryptoEncryption(key))
+
+createSupabaseStores({ persistence: { adapter } })
+```
+
+### Storage Quota
+
+Monitor and manage storage usage:
+
+```typescript
+import { StorageQuotaManager } from 'zustand-supabase'
+
+const quota = new StorageQuotaManager()
+const { count, estimatedBytes } = await quota.getUsage(adapter)
+
+quota.setTableLimit('todos', 1000)
+await quota.enforceLimit(adapter, 'todos')
+```
+
+### Schema Versioning
+
+Automatic cache invalidation on schema changes:
+
+```typescript
+import { checkSchemaVersion } from 'zustand-supabase'
+
+const { versionChanged } = await checkSchemaVersion(adapter, 2)
+// If version changed, all cached data is cleared and fetch() repopulates from Supabase
+```
+
+### Sync Status Hooks
+
+Monitor sync status across stores:
+
+```tsx
+import { useSyncStatus, useQueueStatus, usePendingChanges } from 'zustand-supabase'
+
+function SyncBar() {
+  const { status, pendingCount } = useSyncStatus([stores.todos, stores.profiles])
+  // status: 'synced' | 'syncing' | 'offline' | 'error'
+
+  return <div>{status} ({pendingCount} pending)</div>
+}
+
+function QueueInfo() {
+  const { pendingCount, queueSize } = useQueueStatus(stores.todos)
+  const pending = usePendingChanges(stores.todos)
+  // pending: [{ id, row, mutationType: 'insert' | 'update' | 'delete' }]
+}
+```
+
+### Sync Metrics
+
+Track sync health for monitoring:
+
+```typescript
+import { SyncMetrics } from 'zustand-supabase'
+
+const metrics = new SyncMetrics()
+createSupabaseStores({ logger: metrics })
+
+const snap = metrics.getMetrics()
+// snap.fetchLatencyP95, snap.mutationErrorCount, snap.conflictCount, ...
+```
+
+### Conflict Audit
+
+Log and react to conflict resolutions:
+
+```typescript
+import { ConflictAuditLog } from 'zustand-supabase'
+
+const auditLog = new ConflictAuditLog()
+auditLog.onConflict((entry) => {
+  console.warn(`Conflict on ${entry.table}#${entry.rowId}: ${entry.strategy}`)
+})
+
+const log = auditLog.getLog({ table: 'todos', since: Date.now() - 60000 })
+```
+
 ### Storage
 
 Full Supabase Storage support:
@@ -579,31 +759,32 @@ export default async function TodosPage() {
 #### Web
 
 ```typescript
-import { LocalStorageAdapter, IndexedDBAdapter, WebNetworkStatus } from 'zustand-supabase-adapter-web'
+import {
+  LocalStorageAdapter, IndexedDBAdapter,
+  WebNetworkStatus, WebAppLifecycle,
+} from 'zustand-supabase-adapter-web'
 
-// Small datasets (<5MB)
-new LocalStorageAdapter()
-
-// Large datasets
-new IndexedDBAdapter()
-
-// Network detection
-new WebNetworkStatus()
+new LocalStorageAdapter()   // Small datasets (<5MB)
+new IndexedDBAdapter()      // Large datasets
+new WebNetworkStatus()      // Network detection
+new WebAppLifecycle()       // App lifecycle (Page Visibility API)
 ```
 
 #### React Native
 
 ```typescript
-import { ExpoSqliteAdapter, AsyncStorageAdapter, RNNetworkStatus } from 'zustand-supabase-adapter-react-native'
+import {
+  ExpoSqliteAdapter, AsyncStorageAdapter,
+  RNNetworkStatus, RNAppLifecycle,
+  RNBackgroundSync, createExpoOAuthHandler,
+} from 'zustand-supabase-adapter-react-native'
 
-// Structured (recommended)
-new ExpoSqliteAdapter()
-
-// Simple fallback
-new AsyncStorageAdapter()
-
-// Network detection
-new RNNetworkStatus()
+new ExpoSqliteAdapter()     // Structured (recommended)
+new AsyncStorageAdapter()   // Simple fallback
+new RNNetworkStatus()       // Network detection
+new RNAppLifecycle()        // App lifecycle (AppState API)
+new RNBackgroundSync()      // Background task (expo-task-manager)
+createExpoOAuthHandler(supabase)  // OAuth with deep links
 ```
 
 ### Middleware
@@ -635,8 +816,8 @@ createTableStore({
 | Package | Description |
 |---------|-------------|
 | `zustand-supabase` | Core library |
-| `zustand-supabase-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus |
-| `zustand-supabase-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo |
+| `zustand-supabase-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus, WebAppLifecycle |
+| `zustand-supabase-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo, AppLifecycle, BackgroundSync, OAuth |
 
 ## Tree-Shakeable Imports
 
@@ -645,7 +826,7 @@ createTableStore({
 import { createTableStore, useQuery, eq } from 'zustand-supabase'
 
 // Hooks only
-import { useQuery, useMutation } from 'zustand-supabase/hooks'
+import { useQuery, useMutation, useSyncStatus } from 'zustand-supabase/hooks'
 
 // Query builder only
 import { query, QueryBuilder } from 'zustand-supabase/query/queryBuilder'
@@ -655,6 +836,17 @@ import { prefetch } from 'zustand-supabase/server/prefetch'
 
 // Storage only
 import { createStorageActions } from 'zustand-supabase/storage/storageActions'
+
+// New entry points
+import { setupAppLifecycle } from 'zustand-supabase/lifecycle'
+import { setupBackgroundSync } from 'zustand-supabase/sync/background'
+import { selectiveSync } from 'zustand-supabase/sync/selective'
+import { setupMultiDeviceSync } from 'zustand-supabase/sync/multiDevice'
+import { SyncMetrics } from 'zustand-supabase/sync/metrics'
+import { EncryptedAdapter } from 'zustand-supabase/persistence/encrypted'
+import { StorageQuotaManager } from 'zustand-supabase/persistence/quota'
+import { checkSchemaVersion } from 'zustand-supabase/persistence/schemaVersion'
+import { ConflictAuditLog } from 'zustand-supabase/mutation/audit'
 ```
 
 ## Requirements

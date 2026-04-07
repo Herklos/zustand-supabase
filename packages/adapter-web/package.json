@@ -11,12 +11,14 @@
     "access": "public"
   },
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -28,10 +30,11 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "zustand-supabase": "workspace:*"
+  "peerDependencies": {
+    "zustand-supabase": ">=1.0.0"
   },
   "devDependencies": {
+    "zustand-supabase": "workspace:*",
     "typescript": "^5.7.0",
     "tsup": "^8.0.0"
   },

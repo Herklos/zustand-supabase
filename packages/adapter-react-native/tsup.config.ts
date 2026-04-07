@@ -2,7 +2,7 @@ import { defineConfig } from "tsup"
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm"],
+  format: ["esm", "cjs"],
   dts: true,
   splitting: false,
   sourcemap: true,
@@ -12,5 +12,10 @@ export default defineConfig({
     "expo-sqlite",
     "@react-native-async-storage/async-storage",
     "@react-native-community/netinfo",
+    "react-native",
+    "expo-task-manager",
+    "expo-background-fetch",
+    "expo-linking",
+    "@supabase/supabase-js",
   ],
 })

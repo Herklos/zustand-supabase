@@ -1,5 +1,78 @@
 # Changelog
 
+## [1.1.0] - 2026-04-07
+
+### App Lifecycle Management
+
+- **`AppLifecycleAdapter` interface**: Platform-agnostic foreground/background detection
+- **`setupAppLifecycle()`**: Wires lifecycle events to store operations — auto-flushes offline queue, refreshes auth session, revalidates stale data on foreground; pauses/resumes realtime subscriptions on background
+- **`useAppLifecycle()` hook**: React hook wrapping `setupAppLifecycle` with cleanup
+- **`WebAppLifecycle`**: Web adapter using Page Visibility API (`document.visibilitychange`)
+- **`RNAppLifecycle`**: React Native adapter using `AppState` API
+
+### Background Sync
+
+- **`BackgroundTaskAdapter` interface**: Platform-agnostic background task registration
+- **`setupBackgroundSync()`**: Registers a background task to flush the offline mutation queue when the app is backgrounded
+- **`RNBackgroundSync`**: React Native adapter using `expo-task-manager` and `expo-background-fetch`
+
+### OAuth / Deep Link Helpers
+
+- **`createExpoOAuthHandler()`**: Expo/React Native OAuth handler with deep link URL construction, PKCE code exchange, and implicit flow support via `expo-linking`
+
+### Data Encryption at Rest
+
+- **`EncryptedAdapter`**: Transparent encryption wrapper for any `PersistenceAdapter` — encrypts values on write, decrypts on read
+- **`createWebCryptoEncryption()`**: AES-GCM encryption using Web Crypto API
+
+### Storage Quota Management
+
+- **`StorageQuotaManager`**: Monitor storage usage (`getUsage`), set per-table record limits (`setTableLimit` / `enforceLimit`), evict oldest entries (`evictByCount`)
+- **`useStorageQuota()` hook**: Reactive storage usage monitoring with auto-refresh
+
+### Selective / Partial Sync
+
+- **`selectiveSync()`**: Incremental sync with user-defined filter criteria
+- **`syncAllByPriority()`**: Fetch multiple stores in priority order (lower number = higher priority)
+- **`fetchPage()`**: Convenience wrapper for cursor-based pagination
+- **`incrementalSync` filters**: Added optional `filters` parameter to `IncrementalSyncOptions`
+
+### Multi-Device Sync
+
+- **`setupMultiDeviceSync()`**: Sync store state across devices via Supabase Realtime broadcast channel with delta-only broadcasts, per-table debouncing, conflict resolution, and pending mutation protection
+
+### Sync Health Monitoring
+
+- **`SyncMetrics`**: `SyncLogger` implementation that tracks fetch/mutation counts, latencies (p50/p95/p99), error rates, queue flush counts, conflict counts, and realtime event counts with cached percentile computation
+- **`useSyncMetrics()` hook**: Reactive metrics snapshot via subscription
+
+### Conflict Audit Trail
+
+- **`ConflictAuditLog`**: Records conflict resolution events with table, row ID, strategy, local/remote/resolved values; filterable by table and timestamp
+- **`useConflictNotifications()` hook**: Reactive conflict notification list with dismiss/clear
+- **`resolveConflict()` audit integration**: Optional `auditLog` parameter logs all conflict resolutions
+
+### Schema Version + Cache Invalidation
+
+- **`checkSchemaVersion()`**: Detects schema version mismatch and clears stale cached data, letting `fetch()` repopulate from Supabase
+- **`getSchemaVersion()` / `setSchemaVersion()`**: Read/write the stored schema version
+
+### Optimistic UI Helpers
+
+- **`useSyncStatus()` hook**: Aggregates sync status across multiple stores — returns `pendingCount`, `isSyncing`, `lastSyncedAt`, `failedCount`, and `status` (`synced` | `syncing` | `offline` | `error`)
+- **`computeSyncStatus()`**: Pure function version for non-React usage
+- **`useQueueStatus()` hook**: Per-store pending count and queue size
+- **`usePendingChanges()` hook**: Array of pending rows with mutation type (`insert` | `update` | `delete`)
+
+### Build & Packaging
+
+- **CJS + ESM dual format**: All 3 packages now output both CommonJS and ESM bundles
+- **9 new entry points**: `./lifecycle`, `./sync/background`, `./sync/selective`, `./sync/multiDevice`, `./sync/metrics`, `./persistence/encrypted`, `./persistence/quota`, `./persistence/schemaVersion`, `./mutation/audit`
+
+### Testing
+
+- 340 tests across 39 test files (up from 198 tests in 26 files)
+
 ## [1.0.0] - 2026-04-07
 
 ### Core
@@ -94,11 +167,10 @@
 - **Redux DevTools**: Opt-in DevTools integration via `devtools` option
 - **SyncLogger**: Pluggable logging interface with `consoleLogger` and `noopLogger` presets
 - **Tree-shakeable**: 16 entry points with conditional exports for minimal bundle size
-- **204 tests across 27 files**: Comprehensive test coverage for all features
 
 ### Testing
 
-- 204 tests across 27 test files
+- 198 tests across 26 test files
 - Mock Supabase client for unit testing
 - `MemoryAdapter` for persistence testing
 - Tests for cross-tab sync (hydration guard, auth isolation, pending row preservation)

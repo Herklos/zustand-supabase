@@ -13,6 +13,7 @@ import {
   createSupabaseStores,
   createTableStore,
   setupAuthGate,
+  isPending,
   eq,
 } from "zustand-supabase"
 import { LocalStorageAdapter, WebNetworkStatus } from "zustand-supabase-adapter-web"
@@ -92,7 +93,7 @@ export const todosStore = createTableStore<
       [...get().records.values()].filter((t) => t.completed).length,
 
     pendingCount: () =>
-      [...get().records.values()].filter((t) => t._zs_pending).length,
+      [...get().records.values()].filter((t) => isPending(t)).length,
 
     toggleComplete: async (id: string) => {
       const todo = get().records.get(id)

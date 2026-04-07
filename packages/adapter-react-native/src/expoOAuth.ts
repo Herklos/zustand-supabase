@@ -1,0 +1,88 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+
+export type ExpoOAuthOptions = {
+  /** Custom URL scheme for deep links (e.g., "myapp") */
+  redirectScheme?: string
+  /** Path for the auth callback (default: "auth/callback") */
+  redirectPath?: string
+}
+
+export type ExpoOAuthHandler = {
+  /** Initiate OAuth sign-in with the given provider */
+  signInWithProvider(provider: string): Promise<{ url: string | null }>
+  /** Handle the redirect URL after OAuth callback */
+  handleRedirect(url: string): Promise<void>
+  /** Get the configured redirect URL */
+  getRedirectUrl(): string
+}
+
+/**
+ * Create an OAuth handler for Expo/React Native apps.
+ * Uses expo-linking to construct deep link URLs for OAuth callbacks.
+ */
+export function createExpoOAuthHandler(
+  supabase: SupabaseClient,
+  options?: ExpoOAuthOptions,
+): ExpoOAuthHandler {
+  let Linking: any
+  try {
+    Linking = require("expo-linking")
+  } catch {
+    throw new Error(
+      "createExpoOAuthHandler requires expo-linking. Install it with: npx expo install expo-linking",
+    )
+  }
+
+  const redirectPath = options?.redirectPath ?? "auth/callback"
+  const redirectUrl = options?.redirectScheme
+    ? `${options.redirectScheme}://${redirectPath}`
+    : Linking.createURL(redirectPath)
+
+  return {
+    async signInWithProvider(provider: string) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider as any,
+        options: { redirectTo: redirectUrl },
+      })
+
+      if (error) throw error
+      return { url: data?.url ?? null }
+    },
+
+    async handleRedirect(url: string) {
+      // Parse the URL to extract auth parameters
+      const parsed = Linking.parse(url)
+      const params = parsed.queryParams ?? {}
+
+      // Handle PKCE flow (code exchange)
+      if (params.code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(
+          params.code as string,
+        )
+        if (error) throw error
+        return
+      }
+
+      // Handle implicit flow (access_token in hash/fragment)
+      if (params.access_token && params.refresh_token) {
+        const { error } = await supabase.auth.setSession({
+          access_token: params.access_token as string,
+          refresh_token: params.refresh_token as string,
+        })
+        if (error) throw error
+        return
+      }
+
+      // Handle error response
+      if (params.error) {
+        throw new Error(
+          `OAuth error: ${params.error_description ?? params.error}`,
+        )
+      }
+    },
+
+    getRedirectUrl() {
+      return redirectUrl
+    },
+  }
+}

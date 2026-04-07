@@ -16,25 +16,36 @@ importers:
       '@react-native-community/netinfo':
         specifier: '>=11.0.0'
         version: 12.0.1(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
+      expo-background-fetch:
+        specifier: '>=11.0.0'
+        version: 55.0.13(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))
+      expo-linking:
+        specifier: '>=6.0.0'
+        version: 55.0.11(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       expo-sqlite:
         specifier: '>=14.0.0'
         version: 55.0.14(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)
-      zustand-supabase:
-        specifier: workspace:*
-        version: link:../core
+      expo-task-manager:
+        specifier: '>=11.0.0'
+        version: 55.0.13(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))
+      react-native:
+        specifier: '>=0.70.0'
+        version: 0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.49.0
+        version: 2.102.1
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.3)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      zustand-supabase:
+        specifier: workspace:*
+        version: link:../core
 
   packages/adapter-web:
-    dependencies:
-      zustand-supabase:
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -42,6 +53,9 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      zustand-supabase:
+        specifier: workspace:*
+        version: link:../core
 
   packages/core:
     devDependencies:
@@ -1739,6 +1753,11 @@ packages:
       react: '*'
       react-native: '*'
 
+  expo-background-fetch@55.0.13:
+    resolution: {integrity: sha512-LjHYif8g36gIxUurdTZhVqAesXctoFBYd8pzfXxMvr+Fs6I4HBeAhUXALgHypusm8vUCry5LSSHPuG3+Qq+kkA==}
+    peerDependencies:
+      expo: '*'
+
   expo-constants@55.0.12:
     resolution: {integrity: sha512-e2oxzvPyBv0t51o/lNuiiBtYFQcv3rWnTUvIH0GXRjHkg8LHHePly1vJ5oGg5KO2v8qprleDp9g6s5YD0MIUtQ==}
     peerDependencies:
@@ -1764,6 +1783,12 @@ packages:
       expo: '*'
       react: '*'
 
+  expo-linking@55.0.11:
+    resolution: {integrity: sha512-qVKOeaFZvaJl99mB1gle0AWaC+36t4SxIIf23rkqyjEs/ZJtt7Zr2NKcQpzNhxUyWms8CSKTAlMO1k9Hx9z9zw==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
   expo-modules-autolinking@55.0.15:
     resolution: {integrity: sha512-89WNHlSo+hmH8O7sEHDgOpb3MyHON/NmDIl+LiEGMiHHHSrSbU10DSglYWKUk68yjQebxkmfzXcEghbous3LcA==}
     hasBin: true
@@ -1783,6 +1808,12 @@ packages:
     peerDependencies:
       expo: '*'
       react: '*'
+      react-native: '*'
+
+  expo-task-manager@55.0.13:
+    resolution: {integrity: sha512-lGtDHolhm72+whgm0+QymDP7hDpI0fJOAuT2oZkvQi1sCPp2b14idkEadC7KdrCt+2sG9OMtiyXbOp0ohNNFow==}
+    peerDependencies:
+      expo: '*'
       react-native: '*'
 
   expo@55.0.12:
@@ -2895,6 +2926,9 @@ packages:
   unicode-property-aliases-ecmascript@2.2.0:
     resolution: {integrity: sha512-hpbDzxUY9BFwX+UeBnxv3Sh1q7HFxj48DTmXchNgRa46lO8uj3/1iEn3MiNUYTg1g9ctIqXCCERn8gYZhHC5lQ==}
     engines: {node: '>=4'}
+
+  unimodules-app-loader@55.0.4:
+    resolution: {integrity: sha512-l3vMWR/lYLTj3JE4rhIX5vDVMDY9nGS550XaB90HENqUQnBEMdhhOpI8tOA37QJOUZE6pCQGeQX6mIdEu3uqzg==}
 
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -5105,6 +5139,13 @@ snapshots:
       - supports-color
       - typescript
 
+  expo-background-fetch@55.0.13(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)):
+    dependencies:
+      expo: 55.0.12(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      expo-task-manager: 55.0.13(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))
+    transitivePeerDependencies:
+      - react-native
+
   expo-constants@55.0.12(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(typescript@5.9.3):
     dependencies:
       '@expo/config': 55.0.13(typescript@5.9.3)
@@ -5132,6 +5173,17 @@ snapshots:
       expo: 55.0.12(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react: 19.2.4
 
+  expo-linking@55.0.11(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
+    dependencies:
+      expo-constants: 55.0.12(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(typescript@5.9.3)
+      invariant: 2.2.4
+      react: 19.2.4
+      react-native: 0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
+    transitivePeerDependencies:
+      - expo
+      - supports-color
+      - typescript
+
   expo-modules-autolinking@55.0.15(typescript@5.9.3):
     dependencies:
       '@expo/require-utils': 55.0.3(typescript@5.9.3)
@@ -5156,6 +5208,12 @@ snapshots:
       expo: 55.0.12(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react: 19.2.4
       react-native: 0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
+
+  expo-task-manager@55.0.13(expo@55.0.12)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)):
+    dependencies:
+      expo: 55.0.12(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      react-native: 0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
+      unimodules-app-loader: 55.0.4
 
   expo@55.0.12(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(react-native@0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
     dependencies:
@@ -6370,6 +6428,8 @@ snapshots:
   unicode-match-property-value-ecmascript@2.2.1: {}
 
   unicode-property-aliases-ecmascript@2.2.0: {}
+
+  unimodules-app-loader@55.0.4: {}
 
   unpipe@1.0.0: {}
 

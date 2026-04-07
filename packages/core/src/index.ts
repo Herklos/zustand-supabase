@@ -42,6 +42,9 @@ export type {
   HydrationPhase,
   // Logger
   SyncLogger,
+  // Lifecycle & Background
+  AppLifecycleAdapter,
+  BackgroundTaskAdapter,
   // Factory options
   CreateTableStoreOptions,
   CreateSupabaseStoresOptions,
@@ -53,6 +56,8 @@ export {
   TEMP_ID_PREFIX,
   createTempId,
   isTempId,
+  isPending,
+  getPendingStatus,
   noopLogger,
   consoleLogger,
 } from "./types.js"
@@ -84,6 +89,8 @@ export { remoteWins, localWins, lastWriteWins, fieldLevelMerge, resolveConflict 
 export { ValidationError, zodValidator, runValidation } from "./mutation/validation.js"
 export type { Validator, ValidationConfig } from "./mutation/validation.js"
 export { updateMany, removeMany } from "./mutation/batchOperations.js"
+export { ConflictAuditLog } from "./mutation/conflictAudit.js"
+export type { ConflictAuditEntry } from "./mutation/conflictAudit.js"
 
 // ─── Realtime ────────────────────────────────────────────────────────
 export { RealtimeManager } from "./realtime/realtimeManager.js"
@@ -95,6 +102,12 @@ export { setupAuthGate, isRlsError } from "./auth/authGate.js"
 
 // ─── Persistence ─────────────────────────────────────────────────────
 export { MemoryAdapter } from "./persistence/persistenceAdapter.js"
+export { EncryptedAdapter, createWebCryptoEncryption } from "./persistence/encryptedAdapter.js"
+export type { EncryptionFunctions } from "./persistence/encryptedAdapter.js"
+export { StorageQuotaManager } from "./persistence/storageQuota.js"
+export type { StorageUsage, EvictionOptions } from "./persistence/storageQuota.js"
+export { checkSchemaVersion, getSchemaVersion, setSchemaVersion } from "./persistence/schemaVersion.js"
+export type { SchemaVersionResult } from "./persistence/schemaVersion.js"
 
 // ─── Network ─────────────────────────────────────────────────────────
 export { ManualNetworkStatus } from "./network/onlineManager.js"
@@ -125,6 +138,26 @@ export { setupCrossTabSync, setupBroadcastSync, setupStorageFallback } from "./s
 // ─── Incremental Sync ────────────────────────────────────────────────
 export { incrementalSync } from "./sync/incrementalSync.js"
 
+// ─── Selective Sync ─────────────────────────────────────────────────
+export { selectiveSync, syncAllByPriority, fetchPage } from "./sync/selectiveSync.js"
+export type { SelectiveSyncOptions, PrioritizedStore } from "./sync/selectiveSync.js"
+
+// ─── Multi-Device Sync ──────────────────────────────────────────────
+export { setupMultiDeviceSync } from "./sync/multiDeviceSync.js"
+export type { MultiDeviceSyncOptions } from "./sync/multiDeviceSync.js"
+
+// ─── Background Sync ────────────────────────────────────────────────
+export { setupBackgroundSync, isBackgroundSyncRegistered } from "./sync/backgroundSync.js"
+export type { BackgroundSyncOptions } from "./sync/backgroundSync.js"
+
+// ─── App Lifecycle ──────────────────────────────────────────────────
+export { setupAppLifecycle } from "./lifecycle/appLifecycle.js"
+export type { AppLifecycleOptions } from "./lifecycle/appLifecycle.js"
+
+// ─── Sync Metrics ───────────────────────────────────────────────────
+export { SyncMetrics } from "./sync/syncMetrics.js"
+export type { MetricsSnapshot } from "./sync/syncMetrics.js"
+
 // ─── Cache ───────────────────────────────────────────────────────────
 export { isStale, isExpired, fetchWithSwr, setupAutoRevalidation } from "./cache/cacheTtl.js"
 export type { CacheConfig } from "./cache/cacheTtl.js"
@@ -142,6 +175,17 @@ export { useRpc } from "./hooks/useRpc.js"
 export { useEdgeFunction } from "./hooks/useEdgeFunction.js"
 export { useStorage } from "./hooks/useStorage.js"
 export { useSuspenseQuery } from "./hooks/useSuspenseQuery.js"
+export { useAppLifecycle } from "./hooks/useAppLifecycle.js"
+export { useSyncMetrics } from "./hooks/useSyncMetrics.js"
+export { useConflictNotifications } from "./hooks/useConflictNotifications.js"
+export { useSyncStatus, computeSyncStatus } from "./hooks/useSyncStatus.js"
+export type { SyncStatus, SyncStatusResult } from "./hooks/useSyncStatus.js"
+export { useQueueStatus } from "./hooks/useQueueStatus.js"
+export type { QueueStatusResult } from "./hooks/useQueueStatus.js"
+export { usePendingChanges } from "./hooks/usePendingChanges.js"
+export type { PendingChange } from "./hooks/usePendingChanges.js"
+export { useStorageQuota } from "./hooks/useStorageQuota.js"
+export type { UseStorageQuotaResult } from "./hooks/useStorageQuota.js"
 
 // ─── Server ──────────────────────────────────────────────────────────
 export { prefetch, serializePrefetchResult, deserializePrefetchResult } from "./server/prefetch.js"

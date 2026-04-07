@@ -243,6 +243,20 @@ export function isTempId(id: unknown): boolean {
   return typeof id === "string" && id.startsWith(TEMP_ID_PREFIX)
 }
 
+// ─── Row Status Helpers ─────────────────────────────────────────────
+
+/** Returns true if the row has a pending optimistic mutation. */
+export function isPending<Row extends Partial<RecordMeta>>(row: Row): boolean {
+  return row._zs_pending != null
+}
+
+/** Returns the pending mutation type, or null if the row is confirmed. */
+export function getPendingStatus<Row extends Partial<RecordMeta>>(
+  row: Row,
+): "insert" | "update" | "delete" | null {
+  return row._zs_pending ?? null
+}
+
 // ─── Persistence Adapter ─────────────────────────────────────────────
 
 export interface PersistenceAdapter {
@@ -259,6 +273,21 @@ export interface PersistenceAdapter {
 export interface NetworkStatusAdapter {
   isOnline(): boolean
   subscribe(callback: (online: boolean) => void): () => void
+}
+
+// ─── App Lifecycle Adapter ──────────────────────────────────────────
+
+export interface AppLifecycleAdapter {
+  onForeground(cb: () => void): () => void
+  onBackground(cb: () => void): () => void
+}
+
+// ─── Background Task Adapter ────────────────────────────────────────
+
+export interface BackgroundTaskAdapter {
+  register(taskName: string, handler: () => Promise<void>): Promise<void>
+  unregister(taskName: string): Promise<void>
+  isRegistered(taskName: string): Promise<boolean>
 }
 
 // ─── Conflict Resolution ─────────────────────────────────────────────

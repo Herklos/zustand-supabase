@@ -4,6 +4,7 @@ import type {
   ConflictConfig,
   TrackedRow,
 } from "../types.js"
+import type { ConflictAuditLog } from "./conflictAudit.js"
 
 /**
  * Remote always wins. Simplest strategy.
@@ -119,35 +120,59 @@ export function resolveConflict<Row extends Record<string, unknown>>(
   remote: Row,
   config: ConflictConfig<Row>,
   context: ConflictContext,
+  auditLog?: ConflictAuditLog,
 ): Row | null {
   if (!local) return remote
 
+  let result: Row | null
+
   // Custom resolver takes precedence
   if (config.resolver) {
-    return config.resolver(local, remote, context)
+    result = config.resolver(local, remote, context)
+  } else {
+    switch (config.strategy ?? "server-wins") {
+      case "server-wins":
+        result = remoteWins<Row>()(local, remote, context)
+        break
+      case "client-wins":
+        result = localWins<Row>()(local, remote, context)
+        break
+      case "last-write-wins":
+        result = lastWriteWins<Row>(config.timestampColumn)(
+          local,
+          remote,
+          context,
+        )
+        break
+      case "field-merge":
+        result = fieldLevelMerge<Row>({
+          timestampColumn: config.timestampColumn,
+          serverOwnedFields: config.serverOwnedFields,
+          clientOwnedFields: config.clientOwnedFields,
+        })(local, remote, context)
+        break
+      case "custom":
+        // Requires resolver to be set
+        result = remote
+        break
+      default:
+        result = remote
+        break
+    }
   }
 
-  switch (config.strategy ?? "server-wins") {
-    case "server-wins":
-      return remoteWins<Row>()(local, remote, context)
-    case "client-wins":
-      return localWins<Row>()(local, remote, context)
-    case "last-write-wins":
-      return lastWriteWins<Row>(config.timestampColumn)(
-        local,
-        remote,
-        context,
-      )
-    case "field-merge":
-      return fieldLevelMerge<Row>({
-        timestampColumn: config.timestampColumn,
-        serverOwnedFields: config.serverOwnedFields,
-        clientOwnedFields: config.clientOwnedFields,
-      })(local, remote, context)
-    case "custom":
-      // Requires resolver to be set
-      return remote
-    default:
-      return remote
+  if (auditLog && local) {
+    const pk = context.primaryKey
+    const rowId = Object.values(pk)[0] as string | number
+    auditLog.record({
+      table: context.table,
+      rowId,
+      strategy: config.strategy ?? "server-wins",
+      localValue: local as Record<string, unknown>,
+      remoteValue: remote as Record<string, unknown>,
+      resolvedValue: result as Record<string, unknown> | null,
+    })
   }
+
+  return result
 }

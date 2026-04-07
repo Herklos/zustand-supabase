@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "zustand-supabase/persistence"
+import type { NetworkStatusAdapter } from "zustand-supabase"
 
 /**
  * React Native network status adapter using @react-native-community/netinfo.

@@ -6,7 +6,7 @@
  * - useMutation for CRUD operations
  * - useAuth for authentication
  * - useRealtime for live updates
- * - Optimistic updates (_zs_pending)
+ * - Optimistic updates (isPending helper)
  * - Offline support (queue status)
  * - React Suspense integration
  */
@@ -20,6 +20,7 @@ import {
   createTableHook,
   eq,
   query,
+  isPending,
 } from "zustand-supabase"
 import { stores, todosStore } from "./stores"
 
@@ -165,10 +166,10 @@ function TodoItem({
   onDelete: (id: string) => Promise<void>
 }) {
   const toggleComplete = useTodos((s) => s.toggleComplete)
-  const isPending = !!todo._zs_pending
+  const pending = isPending(todo)
 
   return (
-    <li style={{ opacity: isPending ? 0.6 : 1 }}>
+    <li style={{ opacity: pending ? 0.6 : 1 }}>
       <input
         type="checkbox"
         checked={todo.completed}
@@ -181,7 +182,7 @@ function TodoItem({
       >
         {todo.title}
       </span>
-      {isPending && <span> (saving...)</span>}
+      {pending && <span> (saving...)</span>}
       <button onClick={() => onDelete(todo.id)}>X</button>
     </li>
   )

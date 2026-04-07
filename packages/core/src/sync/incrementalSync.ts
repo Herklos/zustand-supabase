@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { StoreApi } from "zustand"
 import type { TableStore, TrackedRow, ConflictConfig, ConflictContext } from "../types.js"
-import { fromTable } from "../query/queryExecutor.js"
+import { fromTable, applyFilters } from "../query/queryExecutor.js"
 import { resolveConflict } from "../mutation/conflictResolution.js"
 
 export type IncrementalSyncOptions = {
@@ -9,6 +9,8 @@ export type IncrementalSyncOptions = {
   timestampColumn?: string
   /** Schema name (default: "public") */
   schema?: string
+  /** Additional filters to narrow the sync scope */
+  filters?: import("../types.js").FilterDescriptor[]
 }
 
 /**
@@ -41,6 +43,11 @@ export async function incrementalSync<
     // Include rows with NULL timestamp (e.g., server-side defaults not yet set)
     // SQL NULL > anything = NULL (falsy), so these would be silently skipped
     builder = builder.or(`${timestampColumn}.gt.${lastSyncIso},${timestampColumn}.is.null`)
+  }
+
+  // Apply user-provided filters
+  if (options?.filters && options.filters.length > 0) {
+    builder = applyFilters(builder, options.filters)
   }
 
   builder = builder.order(timestampColumn, { ascending: true })

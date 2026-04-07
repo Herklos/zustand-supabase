@@ -1,3 +1,7 @@
 export { ExpoSqliteAdapter } from "./expoSqliteAdapter.js"
 export { AsyncStorageAdapter } from "./asyncStorageAdapter.js"
 export { RNNetworkStatus } from "./rnNetworkStatus.js"
+export { RNAppLifecycle } from "./rnAppLifecycle.js"
+export { RNBackgroundSync } from "./rnBackgroundSync.js"
+export { createExpoOAuthHandler } from "./expoOAuth.js"
+export type { ExpoOAuthOptions, ExpoOAuthHandler } from "./expoOAuth.js"

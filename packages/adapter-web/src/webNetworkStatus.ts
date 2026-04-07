@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "zustand-supabase/persistence"
+import type { NetworkStatusAdapter } from "zustand-supabase"
 
 /**
  * Web network status adapter using navigator.onLine and online/offline events.
