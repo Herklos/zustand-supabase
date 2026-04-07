@@ -26,10 +26,23 @@ export function setupBroadcastSync(
   channel.onmessage = (event: MessageEvent<CrossTabPayload>) => {
     receiving = true
     try {
-      const records = new Map(event.data.records)
+      const incoming = new Map(event.data.records)
+      const current = store.getState()
+      // Preserve locally pending rows (optimistic mutations in flight)
+      for (const [id, row] of current.records) {
+        if ((row as any)?._zs_pending) {
+          incoming.set(id, row)
+        }
+      }
+      const order = [...event.data.order]
+      for (const [id] of current.records) {
+        if ((current.records.get(id) as any)?._zs_pending && !order.includes(id as string | number)) {
+          order.push(id as string | number)
+        }
+      }
       store.setState({
-        records,
-        order: event.data.order,
+        records: incoming,
+        order,
         isRestoring: false,
       } as Partial<SyncableState>)
     } finally {
@@ -78,10 +91,23 @@ export function setupStorageFallback(
       const payload = JSON.parse(event.newValue) as CrossTabPayload
       receiving = true
       try {
-        const records = new Map(payload.records)
+        const incoming = new Map(payload.records)
+        const current = store.getState()
+        // Preserve locally pending rows
+        for (const [id, row] of current.records) {
+          if ((row as any)?._zs_pending) {
+            incoming.set(id, row)
+          }
+        }
+        const order = [...payload.order]
+        for (const [id] of current.records) {
+          if ((current.records.get(id) as any)?._zs_pending && !order.includes(id as string | number)) {
+            order.push(id as string | number)
+          }
+        }
         store.setState({
-          records,
-          order: payload.order,
+          records: incoming,
+          order,
           isRestoring: false,
         } as Partial<SyncableState>)
       } finally {

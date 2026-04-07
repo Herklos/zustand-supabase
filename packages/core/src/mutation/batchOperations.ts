@@ -127,9 +127,6 @@ export async function removeMany<
     }
   }
 
-  // Snapshot original order for rollback
-  const originalOrder = [...(store.getState() as any).order] as (string | number)[]
-
   // Optimistic remove
   store.setState((prev: any) => {
     const records = new Map(prev.records)
@@ -150,13 +147,15 @@ export async function removeMany<
 
     if (error) throw new Error(error.message)
   } catch (err) {
-    // Rollback — restore original order positions
+    // Rollback — re-insert rows into current order (preserves concurrent changes)
     store.setState((prev: any) => {
       const records = new Map(prev.records)
+      const order = [...prev.order] as (string | number)[]
       for (const [id, snapshot] of snapshots) {
         records.set(id, snapshot)
+        if (!order.includes(id)) order.push(id)
       }
-      return { ...prev, records, order: originalOrder, error: err instanceof Error ? err : new Error(String(err)) }
+      return { ...prev, records, order, error: err instanceof Error ? err : new Error(String(err)) }
     })
     throw err
   }

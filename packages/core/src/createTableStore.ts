@@ -547,7 +547,7 @@ export function createTableStore<
 
           records.set(id, serverRow as TrackedRow<Row>)
           if (!prev.records.has(id) && !order.includes(id)) order.push(id)
-          return { ...prev, records, order, error: null }
+          return { ...prev, records, order }
         })
 
         logger.mutationSuccess(table, "UPSERT", Date.now() - start)
