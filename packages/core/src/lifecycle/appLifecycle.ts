@@ -61,6 +61,8 @@ export function setupAppLifecycle(options: AppLifecycleOptions): () => void {
       }
     }
 
+    // Errors from these best-effort operations are surfaced via the store's
+    // own error state and SyncLogger — no need to double-report here.
     if (flushQueueOnForeground && queue && online) {
       queue.flush().catch(() => {})
     }

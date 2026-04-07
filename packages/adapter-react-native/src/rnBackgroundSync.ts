@@ -30,7 +30,8 @@ export class RNBackgroundSync implements BackgroundTaskAdapter {
       try {
         await handler()
         return this.BackgroundFetch.BackgroundFetchResult.NewData
-      } catch {
+      } catch (err) {
+        console.error(`[zs:background-sync] Task "${taskName}" failed:`, err)
         return this.BackgroundFetch.BackgroundFetchResult.Failed
       }
     })

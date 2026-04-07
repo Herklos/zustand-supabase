@@ -79,6 +79,10 @@ export function createExpoOAuthHandler(
           `OAuth error: ${params.error_description ?? params.error}`,
         )
       }
+
+      throw new Error(
+        "OAuth redirect did not contain code, access_token, or error parameters",
+      )
     },
 
     getRedirectUrl() {

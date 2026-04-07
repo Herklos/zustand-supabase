@@ -102,12 +102,6 @@ export async function incrementalSync<
           }
           mergedCount++
         }
-
-        // Ensure row is in order (O(1) via Set)
-        if (!orderSet.has(id)) {
-          order.push(id)
-          orderSet.add(id)
-        }
       }
 
       return {
