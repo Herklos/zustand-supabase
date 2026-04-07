@@ -46,8 +46,8 @@ export function setupBroadcastSync(
         records: [...state.records.entries()],
         order: state.order,
       } satisfies CrossTabPayload)
-    } catch {
-      // Non-serializable data — skip
+    } catch (err) {
+      console.warn(`[zs:crossTab:${name}] Failed to broadcast:`, err)
     }
   })
 
@@ -79,8 +79,8 @@ export function setupStorageFallback(
         order: payload.order,
         isRestoring: false,
       } as Partial<SyncableState>)
-    } catch {
-      // Corrupt data — skip
+    } catch (err) {
+      console.warn(`[zs:crossTab:${name}] Failed to parse cross-tab data:`, err)
     }
   }
 
@@ -101,8 +101,8 @@ export function setupStorageFallback(
           order: state.order,
         } satisfies CrossTabPayload),
       )
-    } catch {
-      // Quota exceeded or non-serializable — skip
+    } catch (err) {
+      console.warn(`[zs:crossTab:${name}] Failed to persist cross-tab data:`, err)
     }
   })
 

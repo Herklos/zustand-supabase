@@ -645,10 +645,13 @@ export function createTableStore<
               TableStore<Row, InsertRow, UpdateRow>
             >)
           }
-        } catch {
-          set({ isHydrated: true, isRestoring: false } as Partial<
-            TableStore<Row, InsertRow, UpdateRow>
-          >)
+        } catch (err) {
+          logger.fetchError(table, `Hydration failed: ${err instanceof Error ? err.message : String(err)}`)
+          set({
+            isHydrated: true,
+            isRestoring: false,
+            error: err instanceof Error ? err : new Error(String(err)),
+          } as Partial<TableStore<Row, InsertRow, UpdateRow>>)
         }
       },
 
@@ -725,7 +728,9 @@ export function createTableStore<
       const cleanup = setupCrossTabSync(store as any, options.crossTab!.name ?? `${schema}:${table}`)
       // Attach cleanup so createSupabaseStores._destroy() can call it
       ;(store as any)._destroyCrossTab = cleanup
-    }).catch(() => {})
+    }).catch((err) => {
+      logger.fetchError(table, `Cross-tab sync setup failed: ${err instanceof Error ? err.message : String(err)}`)
+    })
   }
 
   return store

@@ -33,7 +33,8 @@ export class ExpoSqliteAdapter implements PersistenceAdapter {
     if (!row?.value) return null
     try {
       return JSON.parse(row.value) as T
-    } catch {
+    } catch (err) {
+      console.warn(`[zs:expoSqlite] Failed to parse data for key "${key}":`, err)
       return null
     }
   }

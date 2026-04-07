@@ -60,14 +60,15 @@ export function useQuery<
   // Initial fetch
   useEffect(() => {
     if (!enabled) return
-    fetch()
+    // Error is captured in store.error state; prevent unhandled rejection
+    fetch().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, fetch, ...deps])
 
   // Refetch interval
   useEffect(() => {
     if (!enabled || !refetchInterval) return
-    const interval = setInterval(fetch, refetchInterval)
+    const interval = setInterval(() => { fetch().catch(() => {}) }, refetchInterval)
     return () => clearInterval(interval)
   }, [enabled, refetchInterval, fetch])
 

@@ -8,13 +8,20 @@ export class LocalStorageAdapter implements PersistenceAdapter {
     try {
       const raw = localStorage.getItem(key)
       return raw ? (JSON.parse(raw) as T) : null
-    } catch {
+    } catch (err) {
+      console.warn(`[zs:localStorage] Failed to parse data for key "${key}":`, err)
       return null
     }
   }
 
   async setItem<T>(key: string, value: T): Promise<void> {
-    localStorage.setItem(key, JSON.stringify(value))
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch (err) {
+      throw new Error(
+        `Failed to persist data for key "${key}": ${err instanceof Error ? err.message : String(err)}. Consider using IndexedDBAdapter for larger datasets.`,
+      )
+    }
   }
 
   async removeItem(key: string): Promise<void> {

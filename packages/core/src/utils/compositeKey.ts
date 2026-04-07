@@ -24,7 +24,14 @@ export function buildPkFilter(
     return { [primaryKey]: id }
   }
   // Decode JSON-encoded composite key
-  const values = JSON.parse(String(id)) as unknown[]
+  let values: unknown[]
+  try {
+    values = JSON.parse(String(id)) as unknown[]
+  } catch {
+    throw new Error(
+      `Failed to decode composite primary key from "${String(id)}". Expected JSON-encoded array for key [${primaryKey.join(", ")}].`,
+    )
+  }
   const filter: Record<string, unknown> = {}
   for (let i = 0; i < primaryKey.length; i++) {
     filter[primaryKey[i]!] = values[i]

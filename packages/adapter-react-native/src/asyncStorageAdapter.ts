@@ -26,7 +26,8 @@ export class AsyncStorageAdapter implements PersistenceAdapter {
     if (!raw) return null
     try {
       return JSON.parse(raw) as T
-    } catch {
+    } catch (err) {
+      console.warn(`[zs:asyncStorage] Failed to parse data for key "${key}":`, err)
       return null
     }
   }
