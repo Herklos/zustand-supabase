@@ -66,8 +66,9 @@ export function createTableStore<
   }
   const primaryKey = typeof rawPrimaryKey === "string" ? rawPrimaryKey : rawPrimaryKey[0]!
 
-  // Track last fetch options for refetch
+  // Track last fetch options for refetch and generation counter for stale response detection
   let lastFetchOptions: FetchOptions<Row> | undefined
+  let fetchGeneration = 0
 
   const storeCreator = (
     set: StoreSet<Row, InsertRow, UpdateRow>,
@@ -147,6 +148,7 @@ export function createTableStore<
       // ── Query ─────────────────────────────────────────────────
 
       async fetch(fetchOptions) {
+        const thisGeneration = ++fetchGeneration
         set({ isLoading: true, error: null } as Partial<
           TableStore<Row, InsertRow, UpdateRow>
         >)
@@ -171,9 +173,16 @@ export function createTableStore<
 
         if (error) {
           logger.fetchError(table, error.message)
-          set({ isLoading: false, error } as Partial<
-            TableStore<Row, InsertRow, UpdateRow>
-          >)
+          if (thisGeneration === fetchGeneration) {
+            set({ isLoading: false, error } as Partial<
+              TableStore<Row, InsertRow, UpdateRow>
+            >)
+          }
+          return []
+        }
+
+        // Discard stale response if a newer fetch was initiated
+        if (thisGeneration !== fetchGeneration) {
           return []
         }
 
@@ -300,6 +309,8 @@ export function createTableStore<
           }
 
           records.set(serverId, serverRow as TrackedRow<Row>)
+          // Ensure serverId is in order (handles edge case where optimistic set threw)
+          if (!order.includes(serverId)) order.push(serverId)
           return { ...prev, records, order }
         })
 
@@ -399,6 +410,9 @@ export function createTableStore<
         const start = Date.now()
         logger.mutationStart(table, "UPDATE")
 
+        // Unique ID for this mutation (used for compare-and-swap rollback)
+        const mutationId = crypto.randomUUID()
+
         // Snapshot for rollback
         const snapshot = get().records.get(id)
 
@@ -412,6 +426,7 @@ export function createTableStore<
               ...(changes as Record<string, unknown>),
               _zs_pending: "update",
               _zs_optimistic: true,
+              _zs_mutationId: mutationId,
             } as TrackedRow<Row>)
           }
           return { ...prev, records, error: null }
@@ -425,11 +440,14 @@ export function createTableStore<
           .single()
 
         if (error) {
-          // Rollback
+          // Compare-and-swap rollback: only roll back if this mutation's
+          // optimistic write is still the current value (not overwritten
+          // by a concurrent mutation)
           logger.mutationError(table, "UPDATE", error.message)
           set((prev) => {
             const records = new Map(prev.records)
-            if (snapshot) {
+            const current = records.get(id)
+            if (current?._zs_mutationId === mutationId && snapshot) {
               records.set(id, snapshot)
             }
             return { ...prev, records, error: new Error(error.message) }
