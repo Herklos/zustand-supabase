@@ -669,6 +669,11 @@ export function createTableStore<
       },
 
       clearAll() {
+        // Cancel any pending debounced persist to avoid re-persisting stale data
+        if (persistTimer) {
+          clearTimeout(persistTimer)
+          persistTimer = null
+        }
         set({
           records: new Map(),
           order: [],
@@ -818,7 +823,11 @@ export function createTableStore<
   // Set up cross-tab sync if configured
   if (options.crossTab?.enabled) {
     import("./sync/crossTabSync.js").then(({ setupCrossTabSync }) => {
-      const cleanup = setupCrossTabSync(store as any, options.crossTab!.name ?? `${schema}:${table}`)
+      const cleanup = setupCrossTabSync(
+        store as any,
+        options.crossTab!.name ?? `${schema}:${table}`,
+        options.crossTab!.sessionId,
+      )
       // Attach cleanup so createSupabaseStores._destroy() can call it
       ;(store as any)._destroyCrossTab = cleanup
     }).catch((err) => {

@@ -459,7 +459,7 @@ export type CreateTableStoreOptions<
   isView?: boolean
 
   // Cross-tab sync
-  crossTab?: { enabled?: boolean; name?: string }
+  crossTab?: { enabled?: boolean; name?: string; sessionId?: string }
 
   /** @internal Used by createSupabaseStores to inject shared queue */
   _queue?: unknown
