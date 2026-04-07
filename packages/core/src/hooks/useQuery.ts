@@ -16,6 +16,9 @@ type UseQueryResult<Row> = {
 
 /**
  * Declarative data-fetching hook with automatic refetch on filter changes.
+ *
+ * @param options.staleTime - Time in ms before data is considered stale and
+ *   refetched on mount. Defaults to 5000 (5s). Set to 0 to always refetch.
  */
 export function useQuery<
   Row extends Record<string, unknown>,
@@ -27,11 +30,13 @@ export function useQuery<
     deps?: unknown[]
     enabled?: boolean
     refetchInterval?: number
+    staleTime?: number
   },
 ): UseQueryResult<Row> {
   const enabled = options?.enabled ?? true
   const deps = options?.deps ?? []
   const refetchInterval = options?.refetchInterval
+  const staleTime = options?.staleTime ?? 5000
   const optionsRef = useRef(options)
   optionsRef.current = options
   const filterKey = JSON.stringify(options?.filters ?? null)
@@ -54,17 +59,17 @@ export function useQuery<
   )
 
   const fetch = useCallback(async () => {
-    const { deps: _deps, enabled: _enabled, refetchInterval: _ri, ...fetchOpts } =
+    const { deps: _deps, enabled: _enabled, refetchInterval: _ri, staleTime: _st, ...fetchOpts } =
       optionsRef.current ?? {}
     return store.getState().fetch(fetchOpts)
   }, [store])
 
   // Initial fetch + refetch on filter/sort/deps changes
-  // Skip if data was fetched recently (deduplication window: 2s)
+  // Skip if data was fetched recently (within staleTime)
   useEffect(() => {
     if (!enabled) return
     const { lastFetchedAt } = store.getState()
-    if (lastFetchedAt && Date.now() - lastFetchedAt < 2000) return
+    if (staleTime > 0 && lastFetchedAt && Date.now() - lastFetchedAt < staleTime) return
     // Error is captured in store.error state; prevent unhandled rejection
     fetch().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
