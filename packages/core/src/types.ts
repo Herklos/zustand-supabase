@@ -230,7 +230,13 @@ export type QueuedMutation = {
 export const TEMP_ID_PREFIX = "_temp:" as const
 
 export function createTempId(): string {
-  return `${TEMP_ID_PREFIX}${crypto.randomUUID()}`
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${TEMP_ID_PREFIX}${crypto.randomUUID()}`
+  }
+  // Fallback for non-secure contexts (HTTP, some React Native environments)
+  const hex = () => Math.floor(Math.random() * 16).toString(16)
+  const s = (n: number) => Array.from({ length: n }, hex).join("")
+  return `${TEMP_ID_PREFIX}${s(8)}-${s(4)}-4${s(3)}-${s(4)}-${s(12)}`
 }
 
 export function isTempId(id: unknown): boolean {

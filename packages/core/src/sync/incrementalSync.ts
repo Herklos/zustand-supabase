@@ -56,6 +56,7 @@ export async function incrementalSync<
     store.setState((prev: any) => {
       const records = new Map(prev.records) as Map<string | number, TrackedRow<Row>>
       const order = [...prev.order] as (string | number)[]
+      const orderSet = new Set(order)
 
       for (const row of rows) {
         const id = (row as Record<string, unknown>)[primaryKey] as string | number
@@ -73,10 +74,10 @@ export async function incrementalSync<
           }
           const resolved = resolveConflict(existing, row, options.conflict, context)
           if (resolved === null) {
-            // null = conflict resolver says delete the row
             records.delete(id)
             const idx = order.indexOf(id)
             if (idx >= 0) order.splice(idx, 1)
+            orderSet.delete(id)
             mergedCount++
             continue
           } else {
@@ -86,12 +87,18 @@ export async function incrementalSync<
         } else {
           const isNew = !records.has(id)
           records.set(id, row as TrackedRow<Row>)
-          if (isNew) order.push(id)
+          if (isNew) {
+            order.push(id)
+            orderSet.add(id)
+          }
           mergedCount++
         }
 
-        // Ensure row is in order array (covers non-delete conflict-resolved path)
-        if (!order.includes(id)) order.push(id)
+        // Ensure row is in order (O(1) via Set)
+        if (!orderSet.has(id)) {
+          order.push(id)
+          orderSet.add(id)
+        }
       }
 
       return {

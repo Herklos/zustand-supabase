@@ -27,8 +27,11 @@ describe("updateMany", () => {
       { completed: true },
     )
 
-    // Server updates the rows
-    expect(result.length).toBeGreaterThanOrEqual(0)
+    // Server updates matching rows (completed: false → true)
+    // The mock updates rows in-place, so we verify the store state
+    for (const row of result) {
+      expect((row as any).completed).toBe(true)
+    }
   })
 })
 
@@ -55,8 +58,8 @@ describe("removeMany", () => {
       [{ column: "completed", op: "eq", value: true }],
     )
 
-    // Completed rows removed
-    expect(store.getState().records.size).toBeLessThan(3)
+    // 2 completed rows removed, 1 remaining
+    expect(store.getState().records.size).toBe(1)
   })
 
   it("rolls back on error", async () => {

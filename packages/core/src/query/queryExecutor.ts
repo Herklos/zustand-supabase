@@ -80,15 +80,19 @@ export function applyFilters(
       case "match":
         q = q.match(f.value as Record<string, unknown>)
         break
-      case "not":
-        q = q.not(f.column, "eq", f.value)
+      case "not": {
+        const notOpts = f.value as { op: string; value: unknown }
+        q = q.not(f.column, notOpts.op ?? "eq", notOpts.value ?? f.value)
         break
+      }
       case "or":
         q = q.or(f.value as string)
         break
-      case "filter":
-        q = q.filter(f.column, "eq", f.value)
+      case "filter": {
+        const filterOpts = f.value as { op: string; value: unknown }
+        q = q.filter(f.column, filterOpts.op ?? "eq", filterOpts.value ?? f.value)
         break
+      }
     }
   }
   return q
