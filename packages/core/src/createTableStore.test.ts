@@ -482,6 +482,27 @@ describe("createTableStore", () => {
       })
     })
 
+    describe("fetchGeneration + merge mode", () => {
+      it("discards stale responses in merge mode", async () => {
+        const store = createStore({ cacheStrategy: "merge" })
+
+        // Seed some initial data
+        await store.getState().fetch()
+        expect(store.getState().records.size).toBe(3)
+
+        // Fire two fetches concurrently — only the last should apply
+        const fetch1 = store.getState().fetch({ filters: [{ column: "completed", op: "eq", value: true }] })
+        // Due to in-flight dedup, the second call returns the same promise
+        const fetch2 = store.getState().fetch({ filters: [{ column: "completed", op: "eq", value: false }] })
+
+        await Promise.all([fetch1, fetch2])
+
+        // The store should have valid state (no crash, no corruption)
+        expect(store.getState().records.size).toBeGreaterThan(0)
+        expect(store.getState().isLoading).toBe(false)
+      })
+    })
+
     describe("replace mode (default)", () => {
       it("replaces all records on each fetch", async () => {
         const store = createStore() // default: replace

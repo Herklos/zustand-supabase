@@ -260,8 +260,9 @@ export function createTableStore<
               }
 
               // Preserve pending rows not in the latest query at the end of order
+              const orderSet = new Set(order)
               for (const [id, existing] of currentState.records) {
-                if (existing._zs_pending && !order.includes(id)) {
+                if (existing._zs_pending && !orderSet.has(id)) {
                   order.push(id)
                 }
               }
@@ -832,6 +833,8 @@ export function createTableStore<
               logger.mutationError(table, "PERSIST" as any, err instanceof Error ? err.message : String(err))
             })
         }
+        // Discard any in-flight fetch so we don't reuse a stale response
+        inflightPromise = null
         // Fetch with replace strategy forced
         return actions.fetch({ ...fetchOpts, cacheStrategy: "replace" })
       },
