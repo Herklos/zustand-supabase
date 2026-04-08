@@ -8,31 +8,16 @@
 
 ## Features
 
-- **Auto-generated stores** from Supabase `Database` types
-- **Optimistic mutations** with automatic rollback on failure
-- **Offline-first** with persistent mutation queue and auto-flush
-- **Realtime** subscriptions with pending-mutation protection
-- **Type-safe** — filters, mutations, and hooks fully typed from your schema
-- **Platform adapters** — Web (localStorage/IndexedDB) and React Native (expo-sqlite/AsyncStorage)
-- **Cross-tab sync** via BroadcastChannel
-- **Multi-device sync** via Supabase Realtime broadcast
-- **Auth integration** with session-gated stores and RLS awareness
-- **React Suspense** and **Server Components** support
-- **Storage & Edge Functions** — full Supabase feature coverage
-- **Query cache strategy** — configurable replace vs merge mode per store or per fetch
-- **Infinite scroll** — `useInfiniteQuery` hook with cursor-based load-more
-- **Retry with backoff** — `withRetry()` utility for RPC, Edge Functions, and Storage
-- **Circuit breaker & rate limiter** — protect failing endpoints and throttle requests
-- **Client/server aggregation** — `aggregateLocal()` for in-memory, `aggregateRpc()` for Postgres
-- **Cursor pagination**, **incremental sync**, **selective sync**, **cache TTL**
-- **App lifecycle management** — auto-flush, session refresh, stale revalidation on foreground
-- **Background sync** — flush offline queue in background via expo-task-manager
-- **Data encryption at rest** — transparent encryption wrapper for any persistence adapter
-- **Storage quota management** — usage monitoring, per-table limits, LRU eviction
-- **Sync health monitoring** — latency percentiles, error rates, conflict tracking
-- **Conflict audit trail** — log and notify on conflict resolutions
-- **Schema versioning** — automatic cache invalidation on schema changes
-- **Optimistic UI helpers** — `useSyncStatus`, `useQueueStatus`, `usePendingChanges`
+- **Auto-generated, type-safe stores** from Supabase `Database` types — filters, mutations, and hooks fully typed
+- **Optimistic mutations** with automatic rollback, validation, and conflict resolution
+- **Offline-first** with persistent queue, coalescing, dependency tracking, and auto-flush on reconnect
+- **Realtime & sync** — Supabase subscriptions, cross-tab (BroadcastChannel), multi-device, incremental and selective sync
+- **Caching** — query cache strategy (replace/merge), cursor pagination, infinite scroll, cache TTL with stale-while-revalidate
+- **Platform adapters** — Web (localStorage/IndexedDB) and React Native (expo-sqlite/AsyncStorage/background sync)
+- **Auth, RSC & Suspense** — session-gated stores, RLS awareness, server prefetch, React Suspense
+- **Resilience** — retry with backoff, circuit breaker, rate limiter, encryption at rest, storage quota, schema versioning
+- **Observability** — sync status hooks, sync health metrics, conflict audit trail
+- **Full Supabase coverage** — Storage, Edge Functions, RPC, aggregation (client & server)
 
 ## Installation
 
