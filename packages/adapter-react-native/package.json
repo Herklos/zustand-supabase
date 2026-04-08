@@ -4,7 +4,7 @@
   "description": "React Native platform adapters for Anchor (expo-sqlite, AsyncStorage)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Herklos/anchor.git",
+    "url": "https://github.com/Drakkar-Software/Anchor",
     "directory": "packages/adapter-react-native"
   },
   "publishConfig": {

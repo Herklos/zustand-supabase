@@ -4,7 +4,7 @@
   "description": "Web platform adapters for Anchor (localStorage, IndexedDB)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Herklos/anchor.git",
+    "url": "https://github.com/Drakkar-Software/Anchor",
     "directory": "packages/adapter-web"
   },
   "publishConfig": {
