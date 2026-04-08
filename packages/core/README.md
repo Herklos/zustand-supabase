@@ -1,0 +1,123 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Drakkar-Software/Anchor/main/logo.png" alt="Anchor" width="200" />
+</p>
+
+<h1 align="center">Anchor</h1>
+
+<p align="center">Type-safe Zustand stores auto-generated from your Supabase schema. Offline-first, realtime, with optimistic updates.</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@drakkar.software/anchor"><img src="https://img.shields.io/npm/v/@drakkar.software/anchor" alt="npm" /></a>
+  <a href="https://github.com/Drakkar-Software/Anchor/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@drakkar.software/anchor" alt="license" /></a>
+</p>
+
+## Features
+
+- **Auto-generated, type-safe stores** from Supabase `Database` types
+- **Optimistic mutations** with automatic rollback, validation, and conflict resolution
+- **Offline-first** with persistent queue, coalescing, dependency tracking, and auto-flush on reconnect
+- **Realtime & sync** -- Supabase subscriptions, cross-tab, multi-device, incremental and selective sync
+- **Caching** -- query cache strategy, cursor pagination, infinite scroll, stale-while-revalidate
+- **Auth, RSC & Suspense** -- session-gated stores, RLS awareness, server prefetch, React Suspense
+- **Resilience** -- retry with backoff, circuit breaker, rate limiter, encryption at rest, storage quota
+- **Full Supabase coverage** -- Storage, Edge Functions, RPC, aggregation
+
+## Installation
+
+```bash
+npm install @drakkar.software/anchor zustand @supabase/supabase-js
+```
+
+Platform adapters (pick one or both):
+
+```bash
+# Web (localStorage, IndexedDB)
+npm install @drakkar.software/anchor-adapter-web
+
+# React Native (expo-sqlite, AsyncStorage, background sync)
+npm install @drakkar.software/anchor-adapter-react-native
+```
+
+## Quick Start
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+import { createSupabaseStores } from '@drakkar.software/anchor'
+import { LocalStorageAdapter, WebNetworkStatus } from '@drakkar.software/anchor-adapter-web'
+import type { Database } from './database.types'
+
+const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+const stores = createSupabaseStores<Database>({
+  supabase,
+  tables: ['todos', 'profiles'],
+  persistence: { adapter: new LocalStorageAdapter() },
+  network: new WebNetworkStatus(),
+  realtime: { enabled: true },
+})
+```
+
+```tsx
+import { useQuery, useMutation, eq, isPending } from '@drakkar.software/anchor'
+
+function TodoList() {
+  const { data, isLoading } = useQuery(stores.todos, {
+    filters: [eq('completed', false)],
+  })
+  const { insert, remove } = useMutation(stores.todos)
+
+  return (
+    <ul>
+      {data.map(todo => (
+        <li key={todo.id}>
+          {todo.title}
+          {isPending(todo) && <span> (saving...)</span>}
+          <button onClick={() => remove(todo.id)}>Delete</button>
+        </li>
+      ))}
+      <button onClick={() => insert({ title: 'New todo' })}>Add</button>
+    </ul>
+  )
+}
+```
+
+## What's Included
+
+| Category | Highlights |
+|----------|-----------|
+| **Store factories** | `createTableStore`, `createSupabaseStores`, `createViewStore` |
+| **Mutations** | Optimistic insert/update/upsert/remove, batch ops, offline queue |
+| **Query** | Filter DSL (`eq`, `gt`, `ilike`, ...), fluent builder, cursor pagination |
+| **Hooks** | `useQuery`, `useMutation`, `useAuth`, `useRealtime`, `useInfiniteQuery`, `useSuspenseQuery`, `useLinkedQuery`, `useRpc`, `useEdgeFunction`, `useStorage`, `useSyncStatus` |
+| **Sync** | Cross-tab, multi-device, incremental, selective, background |
+| **Conflict resolution** | `remote-wins`, `local-wins`, `last-write-wins`, `field-merge`, custom |
+| **Persistence** | Pluggable adapters, encrypted storage, schema versioning, quota management |
+| **Auth** | Auth store, session gate, RLS error detection |
+| **Resilience** | Retry with backoff, circuit breaker, rate limiter |
+| **Server** | RSC prefetch, RPC actions, Edge Functions |
+
+## Tree-Shakeable Imports
+
+```typescript
+import { createTableStore, useQuery, eq } from '@drakkar.software/anchor'
+import { useQuery, useMutation } from '@drakkar.software/anchor/hooks'
+import { setupAppLifecycle } from '@drakkar.software/anchor/lifecycle'
+import { setupBackgroundSync } from '@drakkar.software/anchor/sync/background'
+import { EncryptedAdapter } from '@drakkar.software/anchor/persistence/encrypted'
+import { prefetch } from '@drakkar.software/anchor/server/prefetch'
+```
+
+## Related Packages
+
+| Package | Description |
+|---------|-------------|
+| [`@drakkar.software/anchor-adapter-web`](https://www.npmjs.com/package/@drakkar.software/anchor-adapter-web) | Web: localStorage, IndexedDB, network & lifecycle adapters |
+| [`@drakkar.software/anchor-adapter-react-native`](https://www.npmjs.com/package/@drakkar.software/anchor-adapter-react-native) | React Native: expo-sqlite, AsyncStorage, NetInfo, background sync, OAuth |
+
+## Documentation
+
+Full documentation and API reference: [github.com/Drakkar-Software/Anchor](https://github.com/Drakkar-Software/Anchor)
+
+## License
+
+MIT
