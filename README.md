@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/logo.png" alt="zustand-supabase" width="200" />
+  <img src="logo.png" alt="Anchor" width="200" />
 </p>
 
-<h1 align="center">zustand-supabase</h1>
+<h1 align="center">Anchor</h1>
 
 <p align="center">Type-safe Zustand stores auto-generated from your Supabase schema. Offline-first, realtime, with optimistic updates.</p>
 
@@ -22,11 +22,11 @@
 ## Installation
 
 ```bash
-npm install zustand-supabase zustand @supabase/supabase-js
+npm install anchor zustand @supabase/supabase-js
 # Web adapters
-npm install zustand-supabase-adapter-web
+npm install anchor-adapter-web
 # React Native adapters
-npm install zustand-supabase-adapter-react-native
+npm install anchor-adapter-react-native
 ```
 
 ## Quick Start
@@ -41,8 +41,8 @@ npx supabase gen types typescript --project-id $PROJECT_REF > database.types.ts
 
 ```typescript
 import { createClient } from '@supabase/supabase-js'
-import { createSupabaseStores } from 'zustand-supabase'
-import { LocalStorageAdapter, WebNetworkStatus } from 'zustand-supabase-adapter-web'
+import { createSupabaseStores } from 'anchor'
+import { LocalStorageAdapter, WebNetworkStatus } from 'anchor-adapter-web'
 import type { Database } from './database.types'
 
 const supabase = createClient<Database>(
@@ -63,7 +63,7 @@ export const stores = createSupabaseStores<Database>({
 ### 3. Use in React components
 
 ```tsx
-import { useQuery, useMutation, eq, isPending } from 'zustand-supabase'
+import { useQuery, useMutation, eq, isPending } from 'anchor'
 
 function TodoList() {
   const { data, isLoading } = useQuery(stores.todos, {
@@ -220,7 +220,7 @@ await remove(1)
 Custom query that auto-refetches when linked stores mutate. Use for queries with joins or complex selects that can't use `useQuery` directly.
 
 ```tsx
-import { useLinkedQuery } from 'zustand-supabase/hooks'
+import { useLinkedQuery } from 'anchor/hooks'
 
 const { data, isLoading, error, refetch } = useLinkedQuery(
   () => fetchOfferApplications(supabase, offerId),
@@ -253,7 +253,7 @@ function TodoList() {
 Cursor-based infinite scroll with load-more support.
 
 ```tsx
-import { useInfiniteQuery } from 'zustand-supabase/hooks'
+import { useInfiniteQuery } from 'anchor/hooks'
 
 function InfiniteTodoList() {
   const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery(
@@ -333,7 +333,7 @@ import {
   like, ilike, is, inValues,
   contains, containedBy, overlaps, textSearch,
   match, asc, desc,
-} from 'zustand-supabase'
+} from 'anchor'
 
 // Comparison
 eq('status', 'active')
@@ -373,7 +373,7 @@ match({ status: 'active', priority: 1 })
 Alternative to filter arrays:
 
 ```typescript
-import { query } from 'zustand-supabase'
+import { query } from 'anchor'
 
 const result = await store.getState().fetch(
   query<Todo>()
@@ -390,7 +390,7 @@ const result = await store.getState().fetch(
 Efficient keyset pagination for large datasets:
 
 ```typescript
-import { buildCursorQuery, processCursorResults } from 'zustand-supabase'
+import { buildCursorQuery, processCursorResults } from 'anchor'
 
 const { filters, sort, limit } = buildCursorQuery<Todo>({
   cursorColumn: 'created_at',
@@ -437,7 +437,7 @@ The queue supports:
 Five built-in strategies, configurable per table:
 
 ```typescript
-import { remoteWins, localWins, lastWriteWins, fieldLevelMerge } from 'zustand-supabase'
+import { remoteWins, localWins, lastWriteWins, fieldLevelMerge } from 'anchor'
 
 createTableStore({
   // ...
@@ -475,7 +475,7 @@ createTableStore({
 Validate data before mutations:
 
 ```typescript
-import { zodValidator } from 'zustand-supabase'
+import { zodValidator } from 'anchor'
 import { z } from 'zod'
 
 const todoSchema = z.object({
@@ -507,7 +507,7 @@ The library handles concurrent operations safely:
 Session-gated stores with automatic clear/refetch:
 
 ```typescript
-import { setupAuthGate, isRlsError } from 'zustand-supabase'
+import { setupAuthGate, isRlsError } from 'anchor'
 
 const cleanup = setupAuthGate(supabase, stores.auth, [stores.todos, stores.profiles], {
   clearOnSignOut: true,    // Clear all stores when user signs out
@@ -520,7 +520,7 @@ const cleanup = setupAuthGate(supabase, stores.auth, [stores.todos, stores.profi
 Delta fetch — only get rows changed since last sync:
 
 ```typescript
-import { incrementalSync } from 'zustand-supabase'
+import { incrementalSync } from 'anchor'
 
 const { fetchedCount, mergedCount } = await incrementalSync(
   supabase, 'todos', 'id', stores.todos,
@@ -533,7 +533,7 @@ const { fetchedCount, mergedCount } = await incrementalSync(
 Stale-while-revalidate pattern:
 
 ```typescript
-import { fetchWithSwr, setupAutoRevalidation, isStale } from 'zustand-supabase'
+import { fetchWithSwr, setupAutoRevalidation, isStale } from 'anchor'
 
 // Serve stale data, refetch in background
 await fetchWithSwr(stores.todos, { staleTTL: 5 * 60 * 1000 })
@@ -580,7 +580,7 @@ Also available on `createSupabaseStores()` (global and per-table) and `createVie
 State changes sync across browser tabs:
 
 ```typescript
-import { setupCrossTabSync } from 'zustand-supabase'
+import { setupCrossTabSync } from 'anchor'
 
 const cleanup = setupCrossTabSync(store, 'todos')
 // Uses BroadcastChannel, falls back to localStorage events
@@ -600,9 +600,9 @@ createTableStore({
 Auto-flush queue, refresh auth, and revalidate stale data when the app returns to the foreground:
 
 ```typescript
-import { setupAppLifecycle } from 'zustand-supabase'
-import { WebAppLifecycle } from 'zustand-supabase-adapter-web'
-// or: import { RNAppLifecycle } from 'zustand-supabase-adapter-react-native'
+import { setupAppLifecycle } from 'anchor'
+import { WebAppLifecycle } from 'anchor-adapter-web'
+// or: import { RNAppLifecycle } from 'anchor-adapter-react-native'
 
 const cleanup = setupAppLifecycle({
   adapter: new WebAppLifecycle(),
@@ -620,7 +620,7 @@ const cleanup = setupAppLifecycle({
 Or use the React hook:
 
 ```tsx
-import { useAppLifecycle } from 'zustand-supabase'
+import { useAppLifecycle } from 'anchor'
 
 useAppLifecycle({
   adapter: new WebAppLifecycle(),
@@ -634,8 +634,8 @@ useAppLifecycle({
 Flush the offline queue in the background on mobile:
 
 ```typescript
-import { setupBackgroundSync } from 'zustand-supabase'
-import { RNBackgroundSync } from 'zustand-supabase-adapter-react-native'
+import { setupBackgroundSync } from 'anchor'
+import { RNBackgroundSync } from 'anchor-adapter-react-native'
 
 const cleanup = await setupBackgroundSync(offlineQueue, new RNBackgroundSync())
 // Cleanup: await cleanup()
@@ -646,7 +646,7 @@ const cleanup = await setupBackgroundSync(offlineQueue, new RNBackgroundSync())
 Sync state across devices via Supabase Realtime broadcast:
 
 ```typescript
-import { setupMultiDeviceSync } from 'zustand-supabase'
+import { setupMultiDeviceSync } from 'anchor'
 
 const cleanup = setupMultiDeviceSync(supabase, {
   todos: stores.todos,
@@ -662,7 +662,7 @@ const cleanup = setupMultiDeviceSync(supabase, {
 Sync only relevant subsets of data:
 
 ```typescript
-import { selectiveSync, syncAllByPriority } from 'zustand-supabase'
+import { selectiveSync, syncAllByPriority } from 'anchor'
 
 // Sync only active todos
 await selectiveSync(supabase, 'todos', 'id', stores.todos, {
@@ -682,8 +682,8 @@ await syncAllByPriority([
 Transparently encrypt persisted data:
 
 ```typescript
-import { EncryptedAdapter, createWebCryptoEncryption } from 'zustand-supabase'
-import { LocalStorageAdapter } from 'zustand-supabase-adapter-web'
+import { EncryptedAdapter, createWebCryptoEncryption } from 'anchor'
+import { LocalStorageAdapter } from 'anchor-adapter-web'
 
 const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
 const adapter = new EncryptedAdapter(new LocalStorageAdapter(), createWebCryptoEncryption(key))
@@ -696,7 +696,7 @@ createSupabaseStores({ persistence: { adapter } })
 Monitor and manage storage usage:
 
 ```typescript
-import { StorageQuotaManager } from 'zustand-supabase'
+import { StorageQuotaManager } from 'anchor'
 
 const quota = new StorageQuotaManager()
 const { count, estimatedBytes } = await quota.getUsage(adapter)
@@ -710,7 +710,7 @@ await quota.enforceLimit(adapter, 'todos')
 Automatic cache invalidation on schema changes:
 
 ```typescript
-import { checkSchemaVersion } from 'zustand-supabase'
+import { checkSchemaVersion } from 'anchor'
 
 const { versionChanged } = await checkSchemaVersion(adapter, 2)
 // If version changed, all cached data is cleared and fetch() repopulates from Supabase
@@ -721,7 +721,7 @@ const { versionChanged } = await checkSchemaVersion(adapter, 2)
 Monitor sync status across stores:
 
 ```tsx
-import { useSyncStatus, useQueueStatus, usePendingChanges } from 'zustand-supabase'
+import { useSyncStatus, useQueueStatus, usePendingChanges } from 'anchor'
 
 function SyncBar() {
   const { status, pendingCount } = useSyncStatus([stores.todos, stores.profiles])
@@ -742,7 +742,7 @@ function QueueInfo() {
 Track sync health for monitoring:
 
 ```typescript
-import { SyncMetrics } from 'zustand-supabase'
+import { SyncMetrics } from 'anchor'
 
 const metrics = new SyncMetrics()
 createSupabaseStores({ logger: metrics })
@@ -756,7 +756,7 @@ const snap = metrics.getMetrics()
 Log and react to conflict resolutions:
 
 ```typescript
-import { ConflictAuditLog } from 'zustand-supabase'
+import { ConflictAuditLog } from 'anchor'
 
 const auditLog = new ConflictAuditLog()
 auditLog.onConflict((entry) => {
@@ -771,7 +771,7 @@ const log = auditLog.getLog({ table: 'todos', since: Date.now() - 60000 })
 Wrap any async operation with exponential backoff and jitter:
 
 ```typescript
-import { withRetry } from 'zustand-supabase'
+import { withRetry } from 'anchor'
 
 const result = await withRetry(() => createRpcAction(supabase, 'heavy_query')(), {
   maxRetries: 3,
@@ -784,7 +784,7 @@ const result = await withRetry(() => createRpcAction(supabase, 'heavy_query')(),
 Protect against cascading failures from repeatedly calling failing endpoints:
 
 ```typescript
-import { CircuitBreaker } from 'zustand-supabase'
+import { CircuitBreaker } from 'anchor'
 
 const breaker = new CircuitBreaker({ failureThreshold: 5, resetTimeout: 30000 })
 
@@ -798,7 +798,7 @@ const result = await breaker.execute(() => fetch('/api/unstable'))
 Throttle requests using a token bucket algorithm:
 
 ```typescript
-import { RateLimiter } from 'zustand-supabase'
+import { RateLimiter } from 'anchor'
 
 const limiter = new RateLimiter({ maxTokens: 10, refillRate: 2 }) // 10 burst, 2/sec refill
 
@@ -812,7 +812,7 @@ if (limiter.tryConsume()) {
 Client-side and server-side aggregation:
 
 ```typescript
-import { aggregateLocal, aggregateRpc } from 'zustand-supabase'
+import { aggregateLocal, aggregateRpc } from 'anchor'
 
 // Client-side (on store data)
 const stats = aggregateLocal(stores.todos, {
@@ -830,7 +830,7 @@ const serverStats = await aggregateRpc(supabase, 'aggregate_todos', { user_id: '
 Full Supabase Storage support:
 
 ```typescript
-import { createStorageActions } from 'zustand-supabase'
+import { createStorageActions } from 'anchor'
 
 const avatars = createStorageActions(supabase, 'avatars')
 
@@ -844,7 +844,7 @@ await avatars.remove(['old-file.png'])
 ### Edge Functions
 
 ```typescript
-import { createEdgeFunctionAction } from 'zustand-supabase'
+import { createEdgeFunctionAction } from 'anchor'
 
 const sendEmail = createEdgeFunctionAction<{ success: boolean }>(supabase, 'send-email')
 const result = await sendEmail({ body: { to: 'user@example.com', subject: 'Hello' } })
@@ -853,7 +853,7 @@ const result = await sendEmail({ body: { to: 'user@example.com', subject: 'Hello
 ### RPC (Postgres Functions)
 
 ```typescript
-import { createRpcAction } from 'zustand-supabase'
+import { createRpcAction } from 'anchor'
 
 const getStats = createRpcAction<DashboardStats>(supabase, 'get_dashboard_stats')
 const { data, error } = await getStats({ user_id: '123' })
@@ -865,7 +865,7 @@ Server-side prefetch for React Server Components:
 
 ```tsx
 // app/todos/page.tsx (Server Component)
-import { prefetch } from 'zustand-supabase'
+import { prefetch } from 'anchor'
 
 export default async function TodosPage() {
   const { data } = await prefetch<Todo>(supabase, 'todos', {
@@ -885,7 +885,7 @@ export default async function TodosPage() {
 import {
   LocalStorageAdapter, IndexedDBAdapter,
   WebNetworkStatus, WebAppLifecycle,
-} from 'zustand-supabase-adapter-web'
+} from 'anchor-adapter-web'
 
 new LocalStorageAdapter()   // Small datasets (<5MB)
 new IndexedDBAdapter()      // Large datasets
@@ -900,7 +900,7 @@ import {
   ExpoSqliteAdapter, AsyncStorageAdapter,
   RNNetworkStatus, RNAppLifecycle,
   RNBackgroundSync, createExpoOAuthHandler,
-} from 'zustand-supabase-adapter-react-native'
+} from 'anchor-adapter-react-native'
 
 new ExpoSqliteAdapter()     // Structured (recommended)
 new AsyncStorageAdapter()   // Simple fallback
@@ -938,38 +938,38 @@ createTableStore({
 
 | Package | Description |
 |---------|-------------|
-| `zustand-supabase` | Core library |
-| `zustand-supabase-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus, WebAppLifecycle |
-| `zustand-supabase-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo, AppLifecycle, BackgroundSync, OAuth |
+| `anchor` | Core library |
+| `anchor-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus, WebAppLifecycle |
+| `anchor-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo, AppLifecycle, BackgroundSync, OAuth |
 
 ## Tree-Shakeable Imports
 
 ```typescript
 // Full API
-import { createTableStore, useQuery, eq } from 'zustand-supabase'
+import { createTableStore, useQuery, eq } from 'anchor'
 
 // Hooks only
-import { useQuery, useMutation, useSyncStatus } from 'zustand-supabase/hooks'
+import { useQuery, useMutation, useSyncStatus } from 'anchor/hooks'
 
 // Query builder only
-import { query, QueryBuilder } from 'zustand-supabase/query/queryBuilder'
+import { query, QueryBuilder } from 'anchor/query/queryBuilder'
 
 // Server-only (no React dependency)
-import { prefetch } from 'zustand-supabase/server/prefetch'
+import { prefetch } from 'anchor/server/prefetch'
 
 // Storage only
-import { createStorageActions } from 'zustand-supabase/storage/storageActions'
+import { createStorageActions } from 'anchor/storage/storageActions'
 
 // New entry points
-import { setupAppLifecycle } from 'zustand-supabase/lifecycle'
-import { setupBackgroundSync } from 'zustand-supabase/sync/background'
-import { selectiveSync } from 'zustand-supabase/sync/selective'
-import { setupMultiDeviceSync } from 'zustand-supabase/sync/multiDevice'
-import { SyncMetrics } from 'zustand-supabase/sync/metrics'
-import { EncryptedAdapter } from 'zustand-supabase/persistence/encrypted'
-import { StorageQuotaManager } from 'zustand-supabase/persistence/quota'
-import { checkSchemaVersion } from 'zustand-supabase/persistence/schemaVersion'
-import { ConflictAuditLog } from 'zustand-supabase/mutation/audit'
+import { setupAppLifecycle } from 'anchor/lifecycle'
+import { setupBackgroundSync } from 'anchor/sync/background'
+import { selectiveSync } from 'anchor/sync/selective'
+import { setupMultiDeviceSync } from 'anchor/sync/multiDevice'
+import { SyncMetrics } from 'anchor/sync/metrics'
+import { EncryptedAdapter } from 'anchor/persistence/encrypted'
+import { StorageQuotaManager } from 'anchor/persistence/quota'
+import { checkSchemaVersion } from 'anchor/persistence/schemaVersion'
+import { ConflictAuditLog } from 'anchor/mutation/audit'
 ```
 
 ## Requirements

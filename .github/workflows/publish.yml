@@ -52,7 +52,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           npm pkg set "version=$VERSION"
 
-      - name: Publish zustand-supabase
+      - name: Publish anchor
         working-directory: packages/core
         run: npx npm@latest publish --provenance --access public
         env:
@@ -80,9 +80,9 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           npm pkg set "version=$VERSION"
-          npm pkg set "dependencies.zustand-supabase=$VERSION"
+          npm pkg set "dependencies.anchor=$VERSION"
 
-      - name: Publish zustand-supabase-adapter-web
+      - name: Publish anchor-adapter-web
         working-directory: packages/adapter-web
         run: npx npm@latest publish --provenance --access public
         env:
@@ -110,9 +110,9 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           npm pkg set "version=$VERSION"
-          npm pkg set "dependencies.zustand-supabase=$VERSION"
+          npm pkg set "dependencies.anchor=$VERSION"
 
-      - name: Publish zustand-supabase-adapter-react-native
+      - name: Publish anchor-adapter-react-native
         working-directory: packages/adapter-react-native
         run: npx npm@latest publish --provenance --access public
         env:

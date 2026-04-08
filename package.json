@@ -1,5 +1,5 @@
 {
-  "name": "zustand-supabase-monorepo",
+  "name": "anchor-monorepo",
   "private": true,
   "packageManager": "pnpm@10.25.0",
   "scripts": {

@@ -1,4 +1,4 @@
-import type { BackgroundTaskAdapter } from "zustand-supabase"
+import type { BackgroundTaskAdapter } from "anchor"
 
 /**
  * React Native implementation of BackgroundTaskAdapter using

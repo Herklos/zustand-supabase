@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "zustand-supabase/persistence"
+import type { PersistenceAdapter } from "anchor/persistence"
 
 /**
  * React Native persistence adapter using expo-sqlite.
@@ -9,7 +9,7 @@ import type { PersistenceAdapter } from "zustand-supabase/persistence"
 export class ExpoSqliteAdapter implements PersistenceAdapter {
   private db: any // SQLiteDatabase
 
-  constructor(dbName = "zustand_supabase") {
+  constructor(dbName = "anchor") {
     // Dynamic import to avoid bundling expo-sqlite in web builds
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

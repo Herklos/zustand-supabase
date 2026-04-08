@@ -1,13 +1,13 @@
-# CLAUDE.md — zustand-supabase
+# CLAUDE.md — Anchor
 
 ## Project Overview
 
 TypeScript library that binds Zustand state management to Supabase. Auto-generates stores from schema with offline-first, realtime, and optimistic updates.
 
 **Monorepo structure:**
-- `packages/core` — main library (`zustand-supabase`)
-- `packages/adapter-web` — web adapters (`zustand-supabase-adapter-web`)
-- `packages/adapter-react-native` — RN adapters (`zustand-supabase-adapter-react-native`)
+- `packages/core` — main library (`anchor`)
+- `packages/adapter-web` — web adapters (`anchor-adapter-web`)
+- `packages/adapter-react-native` — RN adapters (`anchor-adapter-react-native`)
 - `examples/todo-app` — complete example app
 
 ## Build & Test Commands

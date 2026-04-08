@@ -62,7 +62,7 @@ export function createTableStore<
   if (Array.isArray(rawPrimaryKey) && rawPrimaryKey.length > 1) {
     throw new Error(
       `createTableStore does not yet support composite primary keys (received [${rawPrimaryKey.join(", ")}] for table "${table}"). ` +
-      `Use the encodeKey/applyPkFilters utilities from "zustand-supabase" for composite key tables.`,
+      `Use the encodeKey/applyPkFilters utilities from "anchor" for composite key tables.`,
     )
   }
   const primaryKey = typeof rawPrimaryKey === "string" ? rawPrimaryKey : rawPrimaryKey[0]!

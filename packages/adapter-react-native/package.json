@@ -1,10 +1,10 @@
 {
-  "name": "zustand-supabase-adapter-react-native",
+  "name": "anchor-adapter-react-native",
   "version": "1.0.0",
-  "description": "React Native platform adapters for zustand-supabase (expo-sqlite, AsyncStorage)",
+  "description": "React Native platform adapters for Anchor (expo-sqlite, AsyncStorage)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Herklos/zustand-supabase.git",
+    "url": "https://github.com/Herklos/anchor.git",
     "directory": "packages/adapter-react-native"
   },
   "publishConfig": {
@@ -38,7 +38,7 @@
     "expo-sqlite": ">=14.0.0",
     "expo-task-manager": ">=11.0.0",
     "react-native": ">=0.70.0",
-    "zustand-supabase": ">=1.0.0"
+    "anchor": ">=1.0.0"
   },
   "peerDependenciesMeta": {
     "expo-sqlite": {
@@ -71,7 +71,7 @@
     "@types/node": "^25.5.2",
     "tsup": "^8.0.0",
     "typescript": "^5.7.0",
-    "zustand-supabase": "workspace:*"
+    "anchor": "workspace:*"
   },
   "license": "MIT"
 }

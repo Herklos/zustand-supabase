@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "zustand-supabase"
+import type { NetworkStatusAdapter } from "anchor"
 
 /**
  * React Native network status adapter using @react-native-community/netinfo.

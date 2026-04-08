@@ -1,5 +1,5 @@
 /**
- * Example: Setting up zustand-supabase stores for a Todo app.
+ * Example: Setting up anchor stores for a Todo app.
  *
  * This file creates typed stores for all tables with:
  * - Offline-first persistence (localStorage)
@@ -19,9 +19,9 @@ import {
   SyncMetrics,
   isPending,
   eq,
-} from "zustand-supabase"
-import { setupAppLifecycle } from "zustand-supabase/lifecycle"
-import { LocalStorageAdapter, WebNetworkStatus, WebAppLifecycle } from "zustand-supabase-adapter-web"
+} from "anchor"
+import { setupAppLifecycle } from "anchor/lifecycle"
+import { LocalStorageAdapter, WebNetworkStatus, WebAppLifecycle } from "anchor-adapter-web"
 import type { Database } from "./database.types"
 
 // ─── Supabase Client ─────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "zustand-supabase/persistence"
+import type { PersistenceAdapter } from "anchor/persistence"
 
 /**
  * React Native persistence adapter using @react-native-async-storage/async-storage.

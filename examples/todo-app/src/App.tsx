@@ -1,5 +1,5 @@
 /**
- * Example: Complete Todo app using zustand-supabase.
+ * Example: Complete Todo app using anchor.
  *
  * Demonstrates:
  * - useQuery for data fetching with filters and staleTime
@@ -27,8 +27,8 @@ import {
   eq,
   query,
   isPending,
-} from "zustand-supabase"
-import { useInfiniteQuery, useLinkedQuery } from "zustand-supabase/hooks"
+} from "anchor"
+import { useInfiniteQuery, useLinkedQuery } from "anchor/hooks"
 import { stores, todosStore } from "./stores"
 
 // ─── Auth ────────────────────────────────────────────────────────────

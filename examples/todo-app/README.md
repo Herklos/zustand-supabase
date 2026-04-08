@@ -1,6 +1,6 @@
 # Todo App Example
 
-A complete example demonstrating all zustand-supabase features.
+A complete example demonstrating all anchor features.
 
 ## Files
 

@@ -1,6 +1,6 @@
-import type { PersistenceAdapter } from "zustand-supabase/persistence"
+import type { PersistenceAdapter } from "anchor/persistence"
 
-const DB_NAME = "zustand-supabase"
+const DB_NAME = "anchor"
 const STORE_NAME = "kv"
 const DB_VERSION = 1
 

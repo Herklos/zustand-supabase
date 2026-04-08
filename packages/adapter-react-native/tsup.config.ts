@@ -8,7 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: [
-    "zustand-supabase",
+    "anchor",
     "expo-sqlite",
     "@react-native-async-storage/async-storage",
     "@react-native-community/netinfo",

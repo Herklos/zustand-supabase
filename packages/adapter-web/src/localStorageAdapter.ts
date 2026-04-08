@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "zustand-supabase/persistence"
+import type { PersistenceAdapter } from "anchor/persistence"
 
 /**
  * Web localStorage adapter. Good for small datasets (<5MB).

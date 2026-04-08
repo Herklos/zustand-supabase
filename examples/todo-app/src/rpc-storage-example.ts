@@ -26,13 +26,13 @@ import {
   RateLimiter,
   aggregateLocal,
   SyncMetrics,
-} from "zustand-supabase"
-import { selectiveSync } from "zustand-supabase/sync/selective"
-import { EncryptedAdapter, createWebCryptoEncryption } from "zustand-supabase/persistence/encrypted"
-import { checkSchemaVersion } from "zustand-supabase/persistence/schemaVersion"
-import { LocalStorageAdapter } from "zustand-supabase-adapter-web"
+} from "anchor"
+import { selectiveSync } from "anchor/sync/selective"
+import { EncryptedAdapter, createWebCryptoEncryption } from "anchor/persistence/encrypted"
+import { checkSchemaVersion } from "anchor/persistence/schemaVersion"
+import { LocalStorageAdapter } from "anchor-adapter-web"
 import { stores, syncMetrics } from "./stores"
-import { eq } from "zustand-supabase"
+import { eq } from "anchor"
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,

@@ -1,4 +1,4 @@
-import type { AppLifecycleAdapter } from "zustand-supabase"
+import type { AppLifecycleAdapter } from "anchor"
 
 /**
  * Web implementation of AppLifecycleAdapter using the Page Visibility API.

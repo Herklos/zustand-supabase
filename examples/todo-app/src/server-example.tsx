@@ -1,5 +1,5 @@
 /**
- * Example: React Server Components with zustand-supabase.
+ * Example: React Server Components with anchor.
  *
  * Shows server-side prefetching and client-side hydration.
  * This pattern works with Next.js App Router.
@@ -9,7 +9,7 @@
 // This runs on the server. No hooks, no state.
 
 import { createClient } from "@supabase/supabase-js"
-import { prefetch } from "zustand-supabase"
+import { prefetch } from "anchor"
 import type { Database } from "./database.types"
 
 type TodoRow = Database["public"]["Tables"]["todos"]["Row"]

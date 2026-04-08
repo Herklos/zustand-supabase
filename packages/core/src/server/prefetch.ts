@@ -16,7 +16,7 @@ export type PrefetchResult<Row> = {
  * @example
  * ```tsx
  * // app/todos/page.tsx (Server Component)
- * import { prefetch } from 'zustand-supabase/server'
+ * import { prefetch } from 'anchor/server'
  *
  * export default async function TodosPage() {
  *   const { data, error } = await prefetch(supabase, 'todos', {

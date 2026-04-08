@@ -1,4 +1,4 @@
-import type { AppLifecycleAdapter } from "zustand-supabase"
+import type { AppLifecycleAdapter } from "anchor"
 
 /**
  * React Native implementation of AppLifecycleAdapter using AppState.

@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "zustand-supabase"
+import type { NetworkStatusAdapter } from "anchor"
 
 /**
  * Web network status adapter using navigator.onLine and online/offline events.

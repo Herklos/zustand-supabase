@@ -1,10 +1,10 @@
 {
-  "name": "zustand-supabase-adapter-web",
+  "name": "anchor-adapter-web",
   "version": "1.0.0",
-  "description": "Web platform adapters for zustand-supabase (localStorage, IndexedDB)",
+  "description": "Web platform adapters for Anchor (localStorage, IndexedDB)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Herklos/zustand-supabase.git",
+    "url": "https://github.com/Herklos/anchor.git",
     "directory": "packages/adapter-web"
   },
   "publishConfig": {
@@ -30,10 +30,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "zustand-supabase": ">=1.0.0"
+    "anchor": ">=1.0.0"
   },
   "devDependencies": {
-    "zustand-supabase": "workspace:*",
+    "anchor": "workspace:*",
     "typescript": "^5.7.0",
     "tsup": "^8.0.0"
   },
