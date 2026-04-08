@@ -34,7 +34,7 @@ export class ExpoSqliteAdapter implements PersistenceAdapter {
     try {
       return JSON.parse(row.value) as T
     } catch (err) {
-      console.warn(`[zs:expoSqlite] Failed to parse data for key "${key}":`, err)
+      console.warn(`[anchor:expoSqlite] Failed to parse data for key "${key}":`, err)
       return null
     }
   }
@@ -71,6 +71,6 @@ export class ExpoSqliteAdapter implements PersistenceAdapter {
   }
 
   async clear(): Promise<void> {
-    this.db.runSync("DELETE FROM kv WHERE key LIKE 'zs:%'")
+    this.db.runSync("DELETE FROM kv WHERE key LIKE 'anchor:%'")
   }
 }

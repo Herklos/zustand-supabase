@@ -83,7 +83,7 @@ describe("setupMultiDeviceSync", () => {
     const store = createMockStore()
     setupMultiDeviceSync(supabase as any, { todos: store })
 
-    const channel = supabase._getChannel("zs:device-sync")
+    const channel = supabase._getChannel("anchor:device-sync")
     expect(channel).toBeDefined()
     expect(channel!.subscribe).toHaveBeenCalled()
   })
@@ -105,7 +105,7 @@ describe("setupMultiDeviceSync", () => {
       deviceId: "device-a",
     })
 
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     channel._trigger({
       deviceId: "device-b",
       table: "todos",
@@ -125,7 +125,7 @@ describe("setupMultiDeviceSync", () => {
       deviceId: "device-a",
     })
 
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     channel._trigger({
       deviceId: "device-a", // Same device
       table: "todos",
@@ -139,13 +139,13 @@ describe("setupMultiDeviceSync", () => {
 
   it("protects pending mutations from being overwritten", () => {
     const store = createMockStore([
-      [1, { id: 1, title: "Pending Edit", _zs_pending: "update" }],
+      [1, { id: 1, title: "Pending Edit", _anchor_pending: "update" }],
     ])
     setupMultiDeviceSync(supabase as any, { todos: store }, {
       deviceId: "device-a",
     })
 
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     channel._trigger({
       deviceId: "device-b",
       table: "todos",
@@ -156,7 +156,7 @@ describe("setupMultiDeviceSync", () => {
 
     const state = store.getState()
     expect(state.records.get(1).title).toBe("Pending Edit")
-    expect(state.records.get(1)._zs_pending).toBe("update")
+    expect(state.records.get(1)._anchor_pending).toBe("update")
   })
 
   it("broadcasts store changes with debounce", () => {
@@ -174,7 +174,7 @@ describe("setupMultiDeviceSync", () => {
     })
 
     // Should not have sent yet (debounce)
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     expect(channel.send).not.toHaveBeenCalled()
 
     // Advance past debounce
@@ -202,7 +202,7 @@ describe("setupMultiDeviceSync", () => {
       { deviceId: "device-a", tables: ["todos"] },
     )
 
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     channel._trigger({
       deviceId: "device-b",
       table: "profiles",
@@ -228,7 +228,7 @@ describe("setupMultiDeviceSync", () => {
     expect(supabase.removeChannel).toHaveBeenCalled()
 
     // Advance timers — no broadcast should fire
-    const channel = supabase._getChannel("zs:device-sync")!
+    const channel = supabase._getChannel("anchor:device-sync")!
     vi.advanceTimersByTime(5000)
     expect(channel.send).not.toHaveBeenCalled()
   })

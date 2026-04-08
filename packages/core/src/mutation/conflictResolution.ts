@@ -23,7 +23,7 @@ export function localWins<
 >(): ConflictResolver<Row> {
   return (local, _remote, _context) => {
     // Strip tracking metadata
-    const { _zs_pending, _zs_optimistic, _zs_mutationId, ...clean } =
+    const { _anchor_pending, _anchor_optimistic, _anchor_mutationId, ...clean } =
       local as TrackedRow<Row> & Record<string, unknown>
     return clean as Row
   }
@@ -53,7 +53,7 @@ export function lastWriteWins<Row extends Record<string, unknown>>(
         : (remoteTs as number)
 
     if (localTime > remoteTime) {
-      const { _zs_pending, _zs_optimistic, _zs_mutationId, ...clean } =
+      const { _anchor_pending, _anchor_optimistic, _anchor_mutationId, ...clean } =
         local as TrackedRow<Row> & Record<string, unknown>
       return clean as Row
     }
@@ -91,7 +91,7 @@ export function fieldLevelMerge<Row extends Record<string, unknown>>(options?: {
 
     for (const key of Object.keys(local as Record<string, unknown>)) {
       // Skip metadata
-      if (key.startsWith("_zs_")) continue
+      if (key.startsWith("_anchor_")) continue
 
       // Server-owned: always use remote
       if (serverOwnedFields.includes(key)) continue

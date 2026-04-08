@@ -1,6 +1,6 @@
 import type { PersistenceAdapter } from "../types.js"
 
-const SCHEMA_VERSION_KEY = "zs:__schema_version"
+const SCHEMA_VERSION_KEY = "anchor:__schema_version"
 
 export type SchemaVersionResult = {
   versionChanged: boolean
@@ -9,7 +9,7 @@ export type SchemaVersionResult = {
 
 /**
  * Check if the stored schema version matches the current version.
- * If mismatch: clears all `zs:` prefixed cache keys and updates stored version.
+ * If mismatch: clears all `anchor:` prefixed cache keys and updates stored version.
  * After cache clear, normal fetch() repopulates from Supabase.
  */
 export async function checkSchemaVersion(
@@ -24,7 +24,7 @@ export async function checkSchemaVersion(
 
   // Version mismatch — clear all zs: prefixed keys
   if (adapter.keys && adapter.clear) {
-    const allKeys = await adapter.keys("zs:")
+    const allKeys = await adapter.keys("anchor:")
     for (const key of allKeys) {
       if (key === SCHEMA_VERSION_KEY) continue
       await adapter.removeItem(key)

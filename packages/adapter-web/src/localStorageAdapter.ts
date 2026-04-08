@@ -9,7 +9,7 @@ export class LocalStorageAdapter implements PersistenceAdapter {
       const raw = localStorage.getItem(key)
       return raw ? (JSON.parse(raw) as T) : null
     } catch (err) {
-      console.warn(`[zs:localStorage] Failed to parse data for key "${key}":`, err)
+      console.warn(`[anchor:localStorage] Failed to parse data for key "${key}":`, err)
       return null
     }
   }
@@ -51,7 +51,7 @@ export class LocalStorageAdapter implements PersistenceAdapter {
   }
 
   async clear(): Promise<void> {
-    const zsKeys = await this.keys("zs:")
+    const zsKeys = await this.keys("anchor:")
     for (const key of zsKeys) {
       localStorage.removeItem(key)
     }

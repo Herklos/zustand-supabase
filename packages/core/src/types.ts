@@ -66,9 +66,9 @@ export type DatabaseEnum<
 // ─── Record Metadata (optimistic tracking) ───────────────────────────
 
 export type RecordMeta = {
-  _zs_pending?: "insert" | "update" | "delete"
-  _zs_optimistic?: boolean
-  _zs_mutationId?: string
+  _anchor_pending?: "insert" | "update" | "delete"
+  _anchor_optimistic?: boolean
+  _anchor_mutationId?: string
 }
 
 /** A row with optional tracking metadata */
@@ -261,14 +261,14 @@ export function isTempId(id: unknown): boolean {
 
 /** Returns true if the row has a pending optimistic mutation. */
 export function isPending<Row extends Partial<RecordMeta>>(row: Row): boolean {
-  return row._zs_pending != null
+  return row._anchor_pending != null
 }
 
 /** Returns the pending mutation type, or null if the row is confirmed. */
 export function getPendingStatus<Row extends Partial<RecordMeta>>(
   row: Row,
 ): "insert" | "update" | "delete" | null {
-  return row._zs_pending ?? null
+  return row._anchor_pending ?? null
 }
 
 // ─── Persistence Adapter ─────────────────────────────────────────────
@@ -410,36 +410,36 @@ export const noopLogger: SyncLogger = {
 
 export const consoleLogger: SyncLogger = {
   fetchStart(table) {
-    console.log(`[zs:${table}] fetch start`)
+    console.log(`[anchor:${table}] fetch start`)
   },
   fetchSuccess(table, count, ms) {
-    console.log(`[zs:${table}] fetch success: ${count} rows in ${ms}ms`)
+    console.log(`[anchor:${table}] fetch success: ${count} rows in ${ms}ms`)
   },
   fetchError(table, error) {
-    console.error(`[zs:${table}] fetch error: ${error}`)
+    console.error(`[anchor:${table}] fetch error: ${error}`)
   },
   mutationStart(table, op) {
-    console.log(`[zs:${table}] ${op} start`)
+    console.log(`[anchor:${table}] ${op} start`)
   },
   mutationSuccess(table, op, ms) {
-    console.log(`[zs:${table}] ${op} success in ${ms}ms`)
+    console.log(`[anchor:${table}] ${op} success in ${ms}ms`)
   },
   mutationError(table, op, error) {
-    console.error(`[zs:${table}] ${op} error: ${error}`)
+    console.error(`[anchor:${table}] ${op} error: ${error}`)
   },
   queueFlushStart(count) {
-    console.log(`[zs:queue] flush start: ${count} mutations`)
+    console.log(`[anchor:queue] flush start: ${count} mutations`)
   },
   queueFlushSuccess(succeeded, failed) {
     console.log(
-      `[zs:queue] flush done: ${succeeded} succeeded, ${failed} failed`,
+      `[anchor:queue] flush done: ${succeeded} succeeded, ${failed} failed`,
     )
   },
   conflict(table, id) {
-    console.warn(`[zs:${table}] conflict on row ${id}`)
+    console.warn(`[anchor:${table}] conflict on row ${id}`)
   },
   realtimeEvent(table, event) {
-    console.log(`[zs:${table}] realtime ${event}`)
+    console.log(`[anchor:${table}] realtime ${event}`)
   },
 }
 

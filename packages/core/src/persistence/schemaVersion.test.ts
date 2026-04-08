@@ -26,18 +26,18 @@ describe("schemaVersion", () => {
 
     it("clears cache and updates version on mismatch", async () => {
       await setSchemaVersion(adapter, 1)
-      await adapter.setItem("zs:public:todos", [{ id: 1, title: "Test" }])
-      await adapter.setItem("zs:public:profiles", [{ id: 1 }])
-      await adapter.setItem("zs:__mutation_queue", [{ id: "m1" }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1, title: "Test" }])
+      await adapter.setItem("anchor:public:profiles", [{ id: 1 }])
+      await adapter.setItem("anchor:__mutation_queue", [{ id: "m1" }])
 
       const result = await checkSchemaVersion(adapter, 2)
       expect(result.versionChanged).toBe(true)
       expect(result.previousVersion).toBe(1)
 
       // Cache should be cleared
-      expect(await adapter.getItem("zs:public:todos")).toBeNull()
-      expect(await adapter.getItem("zs:public:profiles")).toBeNull()
-      expect(await adapter.getItem("zs:__mutation_queue")).toBeNull()
+      expect(await adapter.getItem("anchor:public:todos")).toBeNull()
+      expect(await adapter.getItem("anchor:public:profiles")).toBeNull()
+      expect(await adapter.getItem("anchor:__mutation_queue")).toBeNull()
 
       // Version should be updated
       expect(await getSchemaVersion(adapter)).toBe(2)
@@ -45,7 +45,7 @@ describe("schemaVersion", () => {
 
     it("preserves schema version key during clear", async () => {
       await setSchemaVersion(adapter, 1)
-      await adapter.setItem("zs:public:todos", [])
+      await adapter.setItem("anchor:public:todos", [])
 
       await checkSchemaVersion(adapter, 2)
 
@@ -55,12 +55,12 @@ describe("schemaVersion", () => {
 
     it("handles version downgrade", async () => {
       await setSchemaVersion(adapter, 5)
-      await adapter.setItem("zs:public:todos", [{ id: 1 }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1 }])
 
       const result = await checkSchemaVersion(adapter, 3)
       expect(result.versionChanged).toBe(true)
       expect(result.previousVersion).toBe(5)
-      expect(await adapter.getItem("zs:public:todos")).toBeNull()
+      expect(await adapter.getItem("anchor:public:todos")).toBeNull()
     })
   })
 
@@ -77,12 +77,12 @@ describe("schemaVersion", () => {
 
   describe("setSchemaVersion", () => {
     it("stores the version without clearing cache", async () => {
-      await adapter.setItem("zs:public:todos", [{ id: 1 }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1 }])
       await setSchemaVersion(adapter, 5)
 
       expect(await getSchemaVersion(adapter)).toBe(5)
       // Data should not be cleared
-      expect(await adapter.getItem("zs:public:todos")).toEqual([{ id: 1 }])
+      expect(await adapter.getItem("anchor:public:todos")).toEqual([{ id: 1 }])
     })
   })
 })

@@ -37,7 +37,7 @@ export function computeSyncStatus(
     }
 
     for (const row of state.records.values()) {
-      if (row._zs_pending) pendingCount++
+      if (row._anchor_pending) pendingCount++
     }
 
     if (state.lastFetchedAt !== null) {

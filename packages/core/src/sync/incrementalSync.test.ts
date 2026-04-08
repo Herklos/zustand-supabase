@@ -49,7 +49,7 @@ describe("incrementalSync", () => {
       id: 1,
       title: "Local pending",
       updated_at: "2024-01-01",
-      _zs_pending: "update",
+      _anchor_pending: "update",
     } as any)
 
     const result = await incrementalSync(supabase, "todos", "id", store)

@@ -76,14 +76,14 @@ describe("createTableStore", () => {
         completed: false,
         created_at: "",
         updated_at: "",
-        _zs_pending: "insert",
+        _anchor_pending: "insert",
       } as any)
 
       await store.getState().fetch()
 
       // Pending record should still be there
       expect(store.getState().records.has(999)).toBe(true)
-      expect(store.getState().records.get(999)?._zs_pending).toBe("insert")
+      expect(store.getState().records.get(999)?._anchor_pending).toBe("insert")
     })
   })
 
@@ -247,7 +247,7 @@ describe("createTableStore", () => {
         completed: false,
         created_at: "",
         updated_at: "",
-        _zs_pending: "update",
+        _anchor_pending: "update",
       } as any)
 
       // Merge remote data that includes the same id
@@ -266,7 +266,7 @@ describe("createTableStore", () => {
   describe("persistence", () => {
     it("auto-hydrates from persistence adapter on creation", async () => {
       const adapter = new MemoryAdapter()
-      await adapter.setItem("zs:public:todos", [
+      await adapter.setItem("anchor:public:todos", [
         { id: 10, title: "Cached todo", completed: false, created_at: "", updated_at: "" },
       ])
 
@@ -288,7 +288,7 @@ describe("createTableStore", () => {
       // Wait for debounced persist (100ms debounce + async write)
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const persisted = await adapter.getItem<any[]>("zs:public:todos")
+      const persisted = await adapter.getItem<any[]>("anchor:public:todos")
       expect(persisted).toHaveLength(3)
     })
   })
@@ -392,14 +392,14 @@ describe("createTableStore", () => {
           completed: false,
           created_at: "",
           updated_at: "",
-          _zs_pending: "update",
+          _anchor_pending: "update",
         } as any)
 
         await store.getState().fetch()
 
         // Pending record should keep its local version
         expect(store.getState().records.get(1)?.title).toBe("Pending version")
-        expect(store.getState().records.get(1)?._zs_pending).toBe("update")
+        expect(store.getState().records.get(1)?._anchor_pending).toBe("update")
         // But it should appear in order since it's in the fetch results
         expect(store.getState().order).toContain(1)
       })
@@ -414,7 +414,7 @@ describe("createTableStore", () => {
           completed: false,
           created_at: "",
           updated_at: "",
-          _zs_pending: "insert",
+          _anchor_pending: "insert",
         } as any)
 
         await store.getState().fetch()

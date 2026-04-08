@@ -28,7 +28,7 @@ describe("remoteWins", () => {
     const resolver = remoteWins<Row>()
     const local: TrackedRow<Row> = {
       id: 1, title: "Local", completed: false, priority: 1, updated_at: "2024-01-01",
-      _zs_pending: "update",
+      _anchor_pending: "update",
     }
     const remote: Row = {
       id: 1, title: "Remote", completed: true, priority: 2, updated_at: "2024-01-02",
@@ -43,9 +43,9 @@ describe("localWins", () => {
     const resolver = localWins<Row>()
     const local: TrackedRow<Row> = {
       id: 1, title: "Local", completed: false, priority: 1, updated_at: "2024-01-01",
-      _zs_pending: "update",
-      _zs_optimistic: true,
-      _zs_mutationId: "m1",
+      _anchor_pending: "update",
+      _anchor_optimistic: true,
+      _anchor_mutationId: "m1",
     }
     const remote: Row = {
       id: 1, title: "Remote", completed: true, priority: 2, updated_at: "2024-01-02",
@@ -56,9 +56,9 @@ describe("localWins", () => {
       id: 1, title: "Local", completed: false, priority: 1, updated_at: "2024-01-01",
     })
     // Verify metadata stripped
-    expect(result).not.toHaveProperty("_zs_pending")
-    expect(result).not.toHaveProperty("_zs_optimistic")
-    expect(result).not.toHaveProperty("_zs_mutationId")
+    expect(result).not.toHaveProperty("_anchor_pending")
+    expect(result).not.toHaveProperty("_anchor_optimistic")
+    expect(result).not.toHaveProperty("_anchor_mutationId")
   })
 })
 
@@ -79,7 +79,7 @@ describe("lastWriteWins", () => {
     const resolver = lastWriteWins<Row>()
     const local: TrackedRow<Row> = {
       id: 1, title: "Local", completed: false, priority: 1, updated_at: "2024-01-03T00:00:00Z",
-      _zs_pending: "update",
+      _anchor_pending: "update",
     }
     const remote: Row = {
       id: 1, title: "Remote", completed: true, priority: 2, updated_at: "2024-01-02T00:00:00Z",
@@ -87,7 +87,7 @@ describe("lastWriteWins", () => {
 
     const result = resolver(local, remote, baseContext)
     expect((result as any).title).toBe("Local")
-    expect(result).not.toHaveProperty("_zs_pending")
+    expect(result).not.toHaveProperty("_anchor_pending")
   })
 
   it("returns remote on tie (server wins as authoritative source)", () => {

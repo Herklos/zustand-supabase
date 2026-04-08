@@ -40,7 +40,7 @@ describe("OfflineQueue", () => {
       await queue.enqueue(createMutation())
 
       const persisted = await adapter.getItem<QueuedMutation[]>(
-        "zs:__mutation_queue",
+        "anchor:__mutation_queue",
       )
       expect(persisted).toHaveLength(1)
     })
@@ -279,7 +279,7 @@ describe("OfflineQueue", () => {
   describe("hydrate", () => {
     it("loads queue from persistence", async () => {
       const adapter = new MemoryAdapter()
-      await adapter.setItem("zs:__mutation_queue", [
+      await adapter.setItem("anchor:__mutation_queue", [
         createMutation({ id: "persisted-1", status: "pending" }),
         createMutation({ id: "persisted-2", status: "failed" }),
         createMutation({ id: "done", status: "succeeded" }), // Should be filtered out
@@ -305,7 +305,7 @@ describe("OfflineQueue", () => {
 
       expect(queue.pendingCount).toBe(0)
       // Verify persistence was also cleared
-      const persisted = await adapter.getItem<any[]>("zs:__mutation_queue")
+      const persisted = await adapter.getItem<any[]>("anchor:__mutation_queue")
       expect(persisted).toEqual([])
     })
   })

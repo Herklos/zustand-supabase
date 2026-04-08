@@ -36,8 +36,8 @@ describe("MemoryAdapter", () => {
 
   it("keys returns all keys", async () => {
     const adapter = new MemoryAdapter()
-    await adapter.setItem("zs:todos", [])
-    await adapter.setItem("zs:profiles", [])
+    await adapter.setItem("anchor:todos", [])
+    await adapter.setItem("anchor:profiles", [])
     await adapter.setItem("other", "x")
 
     const all = await adapter.keys()
@@ -46,14 +46,14 @@ describe("MemoryAdapter", () => {
 
   it("keys with prefix filters results", async () => {
     const adapter = new MemoryAdapter()
-    await adapter.setItem("zs:todos", [])
-    await adapter.setItem("zs:profiles", [])
+    await adapter.setItem("anchor:todos", [])
+    await adapter.setItem("anchor:profiles", [])
     await adapter.setItem("other", "x")
 
-    const zsKeys = await adapter.keys("zs:")
+    const zsKeys = await adapter.keys("anchor:")
     expect(zsKeys).toHaveLength(2)
-    expect(zsKeys).toContain("zs:todos")
-    expect(zsKeys).toContain("zs:profiles")
+    expect(zsKeys).toContain("anchor:todos")
+    expect(zsKeys).toContain("anchor:profiles")
   })
 
   it("clear removes all data", async () => {

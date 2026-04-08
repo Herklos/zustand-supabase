@@ -141,9 +141,9 @@
 - **Persistent offline queue**: FIFO mutation queue with automatic persistence, coalescing (INSERT+UPDATE -> INSERT, INSERT+DELETE -> remove both), and `dependsOn` dependency enforcement
 - **Exponential backoff with jitter**: Failed mutations retry with configurable backoff (`retryBaseDelay`, `maxRetries`)
 - **Optimistic mutations**: All mutations (insert, insertMany, update, upsert, remove) apply optimistically with snapshot-based rollback
-- **Compare-and-swap rollback**: `_zs_mutationId` on optimistic rows ensures rollback only reverts the originating mutation, not concurrent writes
+- **Compare-and-swap rollback**: `_anchor_mutationId` on optimistic rows ensures rollback only reverts the originating mutation, not concurrent writes
 - **Fetch generation counter**: Stale fetch responses are automatically discarded when a newer fetch is in progress
-- **Pending mutation protection**: External data merges (realtime, cross-tab, fetch, incremental sync) never overwrite rows with `_zs_pending` metadata
+- **Pending mutation protection**: External data merges (realtime, cross-tab, fetch, incremental sync) never overwrite rows with `_anchor_pending` metadata
 - **Temp ID resolution**: Temporary client-generated IDs are resolved to server IDs after INSERT, with mappings persisted across flushes for dependent mutations
 - **Network-aware auto-flush**: Queue automatically flushes when network comes online via `NetworkStatusAdapter`
 

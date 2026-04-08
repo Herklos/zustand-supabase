@@ -11,7 +11,7 @@ import { resolveConflict } from "../mutation/conflictResolution.js"
 export type MultiDeviceSyncOptions = {
   /** Unique device identifier (auto-generated if not provided) */
   deviceId?: string
-  /** Realtime channel name (default: "zs:device-sync") */
+  /** Realtime channel name (default: "anchor:device-sync") */
   channelName?: string
   /** Conflict resolution config */
   conflict?: ConflictConfig
@@ -43,7 +43,7 @@ export function setupMultiDeviceSync(
     (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2))
-  const channelName = options?.channelName ?? "zs:device-sync"
+  const channelName = options?.channelName ?? "anchor:device-sync"
   const debounceMs = options?.debounceMs ?? 1000
   const syncTables = options?.tables
     ? new Set(options.tables)
@@ -78,7 +78,7 @@ export function setupMultiDeviceSync(
           const existing = records.get(id) as TrackedRow<any> | undefined
 
           // Don't overwrite pending mutations
-          if (existing?._zs_pending) continue
+          if (existing?._anchor_pending) continue
 
           if (existing && options?.conflict) {
             const context: ConflictContext = {

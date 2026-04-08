@@ -70,16 +70,16 @@ export function createTableStore<
   // Warn about options that only work via createSupabaseStores
   if (!_queue) {
     if (realtimeOpts?.enabled) {
-      console.warn(`[zs:${table}] "realtime" option requires createSupabaseStores(). Use createSupabaseStores() or manually set up RealtimeManager + bindRealtimeToStore().`)
+      console.warn(`[anchor:${table}] "realtime" option requires createSupabaseStores(). Use createSupabaseStores() or manually set up RealtimeManager + bindRealtimeToStore().`)
     }
     if (offlineQueueOpts?.enabled) {
-      console.warn(`[zs:${table}] "offlineQueue" option requires createSupabaseStores(). Use createSupabaseStores() or manually create an OfflineQueue.`)
+      console.warn(`[anchor:${table}] "offlineQueue" option requires createSupabaseStores(). Use createSupabaseStores() or manually create an OfflineQueue.`)
     }
     if (conflictOpts) {
-      console.warn(`[zs:${table}] "conflict" option requires createSupabaseStores() with realtime enabled. Configure conflict resolution via bindRealtimeToStore().`)
+      console.warn(`[anchor:${table}] "conflict" option requires createSupabaseStores() with realtime enabled. Configure conflict resolution via bindRealtimeToStore().`)
     }
     if (networkOpts) {
-      console.warn(`[zs:${table}] "network" option requires createSupabaseStores(). Use createSupabaseStores() or manually wire NetworkStatusAdapter.`)
+      console.warn(`[anchor:${table}] "network" option requires createSupabaseStores(). Use createSupabaseStores() or manually wire NetworkStatusAdapter.`)
     }
   }
 
@@ -128,7 +128,7 @@ export function createTableStore<
       return { records, order }
     }
 
-    const persistenceKey = persistence?.key ?? `zs:${schema}:${table}`
+    const persistenceKey = persistence?.key ?? `anchor:${schema}:${table}`
 
     // Debounce persistence writes to avoid excessive serialization on rapid mutations
     let persistTimer: ReturnType<typeof setTimeout> | null = null
@@ -250,7 +250,7 @@ export function createTableStore<
               for (const row of data) {
                 const id = (row as Record<string, unknown>)[primaryKey] as string | number
                 const existing = records.get(id)
-                if (existing?._zs_pending) {
+                if (existing?._anchor_pending) {
                   // Keep pending version but include in order
                   order.push(id)
                   continue
@@ -262,7 +262,7 @@ export function createTableStore<
               // Preserve pending rows not in the latest query at the end of order
               const orderSet = new Set(order)
               for (const [id, existing] of currentState.records) {
-                if (existing._zs_pending && !orderSet.has(id)) {
+                if (existing._anchor_pending && !orderSet.has(id)) {
                   order.push(id)
                 }
               }
@@ -275,10 +275,10 @@ export function createTableStore<
               // Preserve rows with pending mutations
               const currentState = get()
               for (const [id, existing] of currentState.records) {
-                if (existing._zs_pending && !records.has(id)) {
+                if (existing._anchor_pending && !records.has(id)) {
                   records.set(id, existing)
                   order.push(id)
-                } else if (existing._zs_pending && records.has(id)) {
+                } else if (existing._anchor_pending && records.has(id)) {
                   records.set(id, existing)
                 }
               }
@@ -360,8 +360,8 @@ export function createTableStore<
         const optimisticRow: TrackedRow<Row> = {
           ...(row as unknown as Row),
           [primaryKey]: tempId,
-          _zs_pending: "insert",
-          _zs_optimistic: true,
+          _anchor_pending: "insert",
+          _anchor_optimistic: true,
         }
 
         set((prev) => {
@@ -437,8 +437,8 @@ export function createTableStore<
           optimisticRows.push({
             ...(row as unknown as Row),
             [primaryKey]: tempId,
-            _zs_pending: "insert",
-            _zs_optimistic: true,
+            _anchor_pending: "insert",
+            _anchor_optimistic: true,
           } as TrackedRow<Row>)
         }
 
@@ -524,9 +524,9 @@ export function createTableStore<
             records.set(id, {
               ...existing,
               ...(changes as Record<string, unknown>),
-              _zs_pending: "update",
-              _zs_optimistic: true,
-              _zs_mutationId: mutationId,
+              _anchor_pending: "update",
+              _anchor_optimistic: true,
+              _anchor_mutationId: mutationId,
             } as TrackedRow<Row>)
           }
           return { ...prev, records, error: null }
@@ -547,7 +547,7 @@ export function createTableStore<
           set((prev) => {
             const records = new Map(prev.records)
             const current = records.get(id)
-            if (current?._zs_mutationId === mutationId && snapshot) {
+            if (current?._anchor_mutationId === mutationId && snapshot) {
               records.set(id, snapshot)
             }
             return { ...prev, records, error: new Error(error.message) }
@@ -590,9 +590,9 @@ export function createTableStore<
             const order = [...prev.order]
             records.set(optimisticId, {
               ...(row as unknown as Row),
-              _zs_pending: "update",
-              _zs_optimistic: true,
-              _zs_mutationId: mutationId,
+              _anchor_pending: "update",
+              _anchor_optimistic: true,
+              _anchor_mutationId: mutationId,
             } as TrackedRow<Row>)
             if (!prev.records.has(optimisticId)) order.push(optimisticId)
             return { ...prev, records, order, error: null }
@@ -613,7 +613,7 @@ export function createTableStore<
               const order = [...prev.order]
               const current = records.get(optimisticId)
               // Only roll back if this mutation's write is still current
-              if (current?._zs_mutationId !== mutationId) {
+              if (current?._anchor_mutationId !== mutationId) {
                 return { ...prev, error: new Error(error.message) }
               }
               if (snapshot) {
@@ -804,7 +804,7 @@ export function createTableStore<
               | number
             // Don't overwrite pending records
             const existing = records.get(id)
-            if (existing?._zs_pending) continue
+            if (existing?._anchor_pending) continue
             const isNew = !records.has(id)
             records.set(id, row as TrackedRow<Row>)
             if (isNew) order.push(id)
@@ -932,8 +932,8 @@ export function createTableStore<
   if (devtoolsOption) {
     const devtoolsName =
       typeof devtoolsOption === "object"
-        ? devtoolsOption.name ?? `zs:${table}`
-        : `zs:${table}`
+        ? devtoolsOption.name ?? `anchor:${table}`
+        : `anchor:${table}`
     combinedCreator = devtools(combinedCreator, { name: devtoolsName })
   }
 

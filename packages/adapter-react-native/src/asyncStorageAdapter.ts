@@ -27,7 +27,7 @@ export class AsyncStorageAdapter implements PersistenceAdapter {
     try {
       return JSON.parse(raw) as T
     } catch (err) {
-      console.warn(`[zs:asyncStorage] Failed to parse data for key "${key}":`, err)
+      console.warn(`[anchor:asyncStorage] Failed to parse data for key "${key}":`, err)
       return null
     }
   }
@@ -54,7 +54,7 @@ export class AsyncStorageAdapter implements PersistenceAdapter {
   }
 
   async clear(): Promise<void> {
-    const zsKeys = await this.keys("zs:")
+    const zsKeys = await this.keys("anchor:")
     if (zsKeys.length > 0) {
       await this.storage.multiRemove(zsKeys)
     }

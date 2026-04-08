@@ -72,7 +72,7 @@ export async function incrementalSync<
         const existing = records.get(id)
 
         // Don't overwrite pending mutations
-        if (existing?._zs_pending) continue
+        if (existing?._anchor_pending) continue
 
         if (existing && options?.conflict) {
           const context: ConflictContext = {

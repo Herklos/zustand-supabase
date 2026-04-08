@@ -74,7 +74,7 @@ describe("bindRealtimeToStore", () => {
     const store = createTestStore()
     store.getState().setRecord(1, {
       id: 1, title: "Pending", completed: false,
-      _zs_pending: "insert",
+      _anchor_pending: "insert",
     } as any)
 
     const { manager, supabase } = createTestManager()
@@ -91,7 +91,7 @@ describe("bindRealtimeToStore", () => {
     const store = createTestStore()
     store.getState().setRecord(1, {
       id: 1, title: "Pending update", completed: false,
-      _zs_pending: "update",
+      _anchor_pending: "update",
     } as any)
 
     const { manager, supabase } = createTestManager()
@@ -107,7 +107,7 @@ describe("bindRealtimeToStore", () => {
     const store = createTestStore()
     store.getState().setRecord(1, {
       id: 1, title: "Pending", completed: false,
-      _zs_pending: "update",
+      _anchor_pending: "update",
     } as any)
 
     const { manager, supabase } = createTestManager()

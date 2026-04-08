@@ -52,12 +52,12 @@ describe("computeSyncStatus", () => {
 
   it("counts pending rows across stores", () => {
     const records1 = new Map([
-      [1, { id: 1, _zs_pending: "insert" }],
+      [1, { id: 1, _anchor_pending: "insert" }],
       [2, { id: 2 }],
     ])
     const records2 = new Map([
-      [3, { id: 3, _zs_pending: "update" }],
-      [4, { id: 4, _zs_pending: "delete" }],
+      [3, { id: 3, _anchor_pending: "update" }],
+      [4, { id: 4, _anchor_pending: "delete" }],
     ])
     const store1 = createMockStore({ records: records1 })
     const store2 = createMockStore({ records: records2 })

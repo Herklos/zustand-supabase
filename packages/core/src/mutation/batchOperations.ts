@@ -48,9 +48,9 @@ export async function updateMany<
         records.set(id, {
           ...existing,
           ...changes,
-          _zs_pending: "update",
-          _zs_optimistic: true,
-          _zs_mutationId: mutationId,
+          _anchor_pending: "update",
+          _anchor_optimistic: true,
+          _anchor_mutationId: mutationId,
         })
       }
     }
@@ -83,7 +83,7 @@ export async function updateMany<
       const records = new Map(prev.records)
       for (const [id, snapshot] of snapshots) {
         const current = records.get(id) as TrackedRow<Row> | undefined
-        if (current?._zs_mutationId === mutationId) {
+        if (current?._anchor_mutationId === mutationId) {
           records.set(id, snapshot)
         }
       }

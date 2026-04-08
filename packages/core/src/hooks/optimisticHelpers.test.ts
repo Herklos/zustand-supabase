@@ -93,12 +93,12 @@ describe("computeSyncStatus", () => {
 
   it("counts pending rows across multiple stores", () => {
     const records1 = new Map<string | number, any>([
-      [1, { id: 1, _zs_pending: "insert" }],
+      [1, { id: 1, _anchor_pending: "insert" }],
       [2, { id: 2 }],
     ])
     const records2 = new Map<string | number, any>([
-      [3, { id: 3, _zs_pending: "update" }],
-      [4, { id: 4, _zs_pending: "delete" }],
+      [3, { id: 3, _anchor_pending: "update" }],
+      [4, { id: 4, _anchor_pending: "delete" }],
     ])
     const s1 = createMockStore({ records: records1 })
     const s2 = createMockStore({ records: records2 })
@@ -109,7 +109,7 @@ describe("computeSyncStatus", () => {
 
   it("returns syncing when there are pending rows even without loading", () => {
     const records = new Map<string | number, any>([
-      [1, { id: 1, _zs_pending: "insert" }],
+      [1, { id: 1, _anchor_pending: "insert" }],
     ])
     const store = createMockStore({ records })
     const result = computeSyncStatus([store])
@@ -161,16 +161,16 @@ describe("computeSyncStatus", () => {
 describe("pending changes extraction", () => {
   it("extracts pending rows with correct mutation types", () => {
     const records = new Map<string | number, any>([
-      [1, { id: 1, title: "new", _zs_pending: "insert" }],
-      [2, { id: 2, title: "updated", _zs_pending: "update" }],
+      [1, { id: 1, title: "new", _anchor_pending: "insert" }],
+      [2, { id: 2, title: "updated", _anchor_pending: "update" }],
       [3, { id: 3, title: "normal" }],
-      [4, { id: 4, title: "deleted", _zs_pending: "delete" }],
+      [4, { id: 4, title: "deleted", _anchor_pending: "delete" }],
     ])
 
     const pending: { id: string | number; mutationType: string }[] = []
     for (const [id, row] of records.entries()) {
-      if (row._zs_pending) {
-        pending.push({ id, mutationType: row._zs_pending })
+      if (row._anchor_pending) {
+        pending.push({ id, mutationType: row._anchor_pending })
       }
     }
 
@@ -188,7 +188,7 @@ describe("pending changes extraction", () => {
 
     const pending: any[] = []
     for (const [_id, row] of records.entries()) {
-      if (row._zs_pending) pending.push(row)
+      if (row._anchor_pending) pending.push(row)
     }
 
     expect(pending).toHaveLength(0)
@@ -200,16 +200,16 @@ describe("pending changes extraction", () => {
 describe("queue status computation", () => {
   it("computes pending count and queue size", () => {
     const records = new Map<string | number, any>([
-      [1, { id: 1, _zs_pending: "insert" }],
+      [1, { id: 1, _anchor_pending: "insert" }],
       [2, { id: 2 }],
-      [3, { id: 3, _zs_pending: "update" }],
+      [3, { id: 3, _anchor_pending: "update" }],
     ])
     const store = createMockStore({ records, getQueueSize: () => 5 })
     const state = store.getState()
 
     let pendingCount = 0
     for (const row of state.records.values()) {
-      if (row._zs_pending) pendingCount++
+      if (row._anchor_pending) pendingCount++
     }
 
     expect(pendingCount).toBe(2)
@@ -222,7 +222,7 @@ describe("queue status computation", () => {
 
     let pendingCount = 0
     for (const row of state.records.values()) {
-      if (row._zs_pending) pendingCount++
+      if (row._anchor_pending) pendingCount++
     }
 
     expect(pendingCount).toBe(0)

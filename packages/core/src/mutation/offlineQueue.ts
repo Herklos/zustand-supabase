@@ -35,8 +35,8 @@ type OfflineQueueOptions = {
   ) => void
 }
 
-const QUEUE_KEY = "zs:__mutation_queue"
-const TEMP_ID_MAP_KEY = "zs:__temp_id_map"
+const QUEUE_KEY = "anchor:__mutation_queue"
+const TEMP_ID_MAP_KEY = "anchor:__temp_id_map"
 
 /**
  * Persistent FIFO mutation queue with coalescing, retry, and auto-flush.
@@ -114,7 +114,7 @@ export class OfflineQueue {
 
   async enqueue(mutation: QueuedMutation): Promise<void> {
     if (!this.executors.has(mutation.table)) {
-      console.warn(`[zs:queue] No executor registered for table "${mutation.table}" — mutation may not flush`)
+      console.warn(`[anchor:queue] No executor registered for table "${mutation.table}" — mutation may not flush`)
     }
     // Tag with current user for multi-user isolation
     if (this.currentUserId && !mutation.userId) {

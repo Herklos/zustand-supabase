@@ -497,8 +497,8 @@ createTableStore({
 The library handles concurrent operations safely:
 
 - **Concurrent fetch()**: Uses a generation counter — stale responses from superseded fetches are discarded automatically
-- **Concurrent mutations**: Uses compare-and-swap (CAS) rollback with `_zs_mutationId` — a failed update only rolls back if its own optimistic write is still current, preventing it from destroying a concurrent successful mutation's data
-- **Realtime during mutations**: Rows with `_zs_pending` metadata are protected from being overwritten by realtime INSERT/UPDATE/DELETE events
+- **Concurrent mutations**: Uses compare-and-swap (CAS) rollback with `_anchor_mutationId` — a failed update only rolls back if its own optimistic write is still current, preventing it from destroying a concurrent successful mutation's data
+- **Realtime during mutations**: Rows with `_anchor_pending` metadata are protected from being overwritten by realtime INSERT/UPDATE/DELETE events
 - **Cross-tab sync**: Pending optimistic rows are preserved when receiving state from other tabs
 - **Offline queue**: Flush uses a `flushing` guard to prevent concurrent execution, and in-place pruning preserves mutations enqueued during a flush
 

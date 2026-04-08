@@ -6,7 +6,7 @@ export type StorageUsage = {
 }
 
 export type EvictionOptions = {
-  /** Only consider keys with this prefix (default: "zs:") */
+  /** Only consider keys with this prefix (default: "anchor:") */
   prefix?: string
   /** Maximum number of records to keep */
   maxRecords?: number
@@ -27,7 +27,7 @@ export class StorageQuotaManager {
    */
   async getUsage(
     adapter: PersistenceAdapter,
-    prefix = "zs:",
+    prefix = "anchor:",
   ): Promise<StorageUsage> {
     if (!adapter.keys) {
       throw new Error(
@@ -77,7 +77,7 @@ export class StorageQuotaManager {
     const limit = this.tableLimits.get(table)
     if (limit === undefined) return 0
 
-    const key = `zs:${schema}:${table}`
+    const key = `anchor:${schema}:${table}`
     const data = await adapter.getItem<Record<string, unknown>[]>(key)
     if (!data || !Array.isArray(data) || data.length <= limit) return 0
 
@@ -95,7 +95,7 @@ export class StorageQuotaManager {
     adapter: PersistenceAdapter,
     options: EvictionOptions = {},
   ): Promise<number> {
-    const { prefix = "zs:", maxRecords } = options
+    const { prefix = "anchor:", maxRecords } = options
 
     if (!adapter.keys) {
       throw new Error("StorageQuotaManager: adapter does not support keys()")
@@ -106,10 +106,10 @@ export class StorageQuotaManager {
     // Skip internal keys
     const dataKeys = allKeys.filter(
       (k) =>
-        !k.startsWith("zs:__") &&
-        k !== "zs:__schema_version" &&
-        k !== "zs:__mutation_queue" &&
-        k !== "zs:__temp_id_map",
+        !k.startsWith("anchor:__") &&
+        k !== "anchor:__schema_version" &&
+        k !== "anchor:__mutation_queue" &&
+        k !== "anchor:__temp_id_map",
     )
 
     if (dataKeys.length <= maxRecords) return 0

@@ -25,8 +25,8 @@ export function usePendingChanges<Row extends Record<string, unknown>>(
 
   const pending: PendingChange<Row>[] = []
   for (const [id, row] of records.entries()) {
-    if (row._zs_pending) {
-      pending.push({ id, row, mutationType: row._zs_pending })
+    if (row._anchor_pending) {
+      pending.push({ id, row, mutationType: row._anchor_pending })
     }
   }
   return pending

@@ -23,7 +23,7 @@ export function useQueueStatus(
 
   let pendingCount = 0
   for (const row of records.values()) {
-    if (row._zs_pending) pendingCount++
+    if (row._anchor_pending) pendingCount++
   }
 
   return { pendingCount, queueSize: store.getState().getQueueSize() }

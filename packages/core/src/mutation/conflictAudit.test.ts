@@ -228,9 +228,9 @@ describe("ConflictAuditLog", () => {
     const local: TrackedRow<Row> = {
       id: 1,
       title: "local title",
-      _zs_pending: "update",
-      _zs_optimistic: true,
-      _zs_mutationId: "mut-1",
+      _anchor_pending: "update",
+      _anchor_optimistic: true,
+      _anchor_mutationId: "mut-1",
     }
     const remote: Row = { id: 1, title: "remote title" }
     const config: ConflictConfig<Row> = { strategy: "server-wins" }

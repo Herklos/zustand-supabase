@@ -116,12 +116,12 @@ describe("EncryptedAdapter", () => {
 
   describe("keys", () => {
     it("delegates to inner adapter", async () => {
-      await adapter.setItem("zs:a", 1)
-      await adapter.setItem("zs:b", 2)
+      await adapter.setItem("anchor:a", 1)
+      await adapter.setItem("anchor:b", 2)
       await adapter.setItem("other", 3)
 
-      const keys = await adapter.keys("zs:")
-      expect(keys).toEqual(expect.arrayContaining(["zs:a", "zs:b"]))
+      const keys = await adapter.keys("anchor:")
+      expect(keys).toEqual(expect.arrayContaining(["anchor:a", "anchor:b"]))
       expect(keys).not.toContain("other")
     })
 

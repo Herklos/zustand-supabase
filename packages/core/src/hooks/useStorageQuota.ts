@@ -22,7 +22,7 @@ export function useStorageQuota(
 ): UseStorageQuotaResult {
   const [usage, setUsage] = useState<StorageUsage>({ count: 0, estimatedBytes: 0 })
   const [isLoading, setIsLoading] = useState(true)
-  const prefix = options?.prefix ?? "zs:"
+  const prefix = options?.prefix ?? "anchor:"
   const refreshInterval = options?.refreshInterval
 
   const refresh = useCallback(() => {

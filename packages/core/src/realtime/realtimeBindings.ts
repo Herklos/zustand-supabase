@@ -53,7 +53,7 @@ export function bindRealtimeToStore<
 
         // Don't overwrite pending optimistic inserts
         const existing = records.get(id)
-        if (existing?._zs_pending) return prev
+        if (existing?._anchor_pending) return prev
 
         records.set(id, row as TrackedRow<Row>)
         if (!order.includes(id)) order.push(id)
@@ -70,7 +70,7 @@ export function bindRealtimeToStore<
         const existing = records.get(id)
 
         // Don't overwrite pending mutations
-        if (existing?._zs_pending) return prev
+        if (existing?._anchor_pending) return prev
 
         if (conflict) {
           const pending = getPendingMutations?.(table)?.filter(
@@ -114,7 +114,7 @@ export function bindRealtimeToStore<
 
         // Don't remove rows with pending mutations
         const existing = records.get(id)
-        if (existing?._zs_pending) return prev
+        if (existing?._anchor_pending) return prev
 
         records.delete(id)
         const order = (prev.order as (string | number)[]).filter((o) => o !== id)

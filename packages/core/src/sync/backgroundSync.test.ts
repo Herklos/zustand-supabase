@@ -31,13 +31,13 @@ describe("setupBackgroundSync", () => {
 
   it("registers a background task", async () => {
     await setupBackgroundSync({ flush }, adapter)
-    expect(adapter.handlers.has("zs:background-sync")).toBe(true)
+    expect(adapter.handlers.has("anchor:background-sync")).toBe(true)
   })
 
   it("registered handler calls queue.flush()", async () => {
     await setupBackgroundSync({ flush }, adapter)
 
-    const handler = adapter.handlers.get("zs:background-sync")!
+    const handler = adapter.handlers.get("anchor:background-sync")!
     await handler()
     expect(flush).toHaveBeenCalledOnce()
   })
@@ -47,15 +47,15 @@ describe("setupBackgroundSync", () => {
       taskName: "custom-sync",
     })
     expect(adapter.handlers.has("custom-sync")).toBe(true)
-    expect(adapter.handlers.has("zs:background-sync")).toBe(false)
+    expect(adapter.handlers.has("anchor:background-sync")).toBe(false)
   })
 
   it("cleanup unregisters the task", async () => {
     const cleanup = await setupBackgroundSync({ flush }, adapter)
-    expect(adapter.handlers.has("zs:background-sync")).toBe(true)
+    expect(adapter.handlers.has("anchor:background-sync")).toBe(true)
 
     await cleanup()
-    expect(adapter.handlers.has("zs:background-sync")).toBe(false)
+    expect(adapter.handlers.has("anchor:background-sync")).toBe(false)
   })
 
   it("cleanup unregisters custom task name", async () => {

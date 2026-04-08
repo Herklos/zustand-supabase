@@ -213,7 +213,7 @@ describe("createTableStore performance optimizations", () => {
       const adapter = new MemoryAdapter()
 
       // Pre-populate persistence
-      await adapter.setItem("zs:public:todos", [
+      await adapter.setItem("anchor:public:todos", [
         { id: 1, title: "Cached todo", completed: false, created_at: "2024-01-01", updated_at: "2024-01-01" },
       ])
 

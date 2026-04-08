@@ -1,9 +1,9 @@
 import type { BackgroundTaskAdapter } from "../types.js"
 
-const TASK_NAME = "zs:background-sync"
+const TASK_NAME = "anchor:background-sync"
 
 export type BackgroundSyncOptions = {
-  /** Custom task name (default: "zs:background-sync") */
+  /** Custom task name (default: "anchor:background-sync") */
   taskName?: string
 }
 

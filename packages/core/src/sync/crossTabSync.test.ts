@@ -124,7 +124,7 @@ describe("crossTabSync", () => {
 
     // Store B has a pending mutation
     storeB.setState({
-      records: new Map([[99, { id: 99, title: "Pending", _zs_pending: "insert" }]]),
+      records: new Map([[99, { id: 99, title: "Pending", _anchor_pending: "insert" }]]),
       order: [99],
     })
 

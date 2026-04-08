@@ -40,21 +40,21 @@ Each Supabase table gets its own Zustand store. `createTableStore()` for single 
 `immer → devtools → subscribeWithSelector → storeCreator` (outermost wraps first)
 
 ### Mutation pipeline
-`assertNotView → runValidation → optimistic apply (with _zs_mutationId) → remote execute → confirm/rollback`
+`assertNotView → runValidation → optimistic apply (with _anchor_mutationId) → remote execute → confirm/rollback`
 
 ### Concurrency patterns
 - **Fetch generation counter**: `fetchGeneration` increments per fetch(), stale responses discarded
-- **CAS rollback**: `_zs_mutationId` on optimistic rows — rollback only if this mutation's write is still current
-- **Pending protection**: `_zs_pending` rows are never overwritten by realtime, cross-tab, or fetch
+- **CAS rollback**: `_anchor_mutationId` on optimistic rows — rollback only if this mutation's write is still current
+- **Pending protection**: `_anchor_pending` rows are never overwritten by realtime, cross-tab, or fetch
 - **OfflineQueue**: `flushing` boolean guard, in-place splice pruning, `dependsOn` enforcement
 
 ## Critical Invariants
 
 1. **records/order sync**: Every `records.set(id)` must have corresponding `order.push(id)` if new. Every `records.delete(id)` must filter from order.
-2. **Pending protection**: Any code merging external data (realtime, cross-tab, fetch, incrementalSync) MUST check `existing?._zs_pending` before overwriting.
-3. **CAS rollback**: update/upsert/updateMany rollback MUST check `current?._zs_mutationId === mutationId` before restoring snapshot.
+2. **Pending protection**: Any code merging external data (realtime, cross-tab, fetch, incrementalSync) MUST check `existing?._anchor_pending` before overwriting.
+3. **CAS rollback**: update/upsert/updateMany rollback MUST check `current?._anchor_mutationId === mutationId` before restoring snapshot.
 4. **Set vs includes**: Use `Set` for O(1) lookup in loops (insertMany, removeMany, incrementalSync). Single-row `order.includes()` is acceptable.
-5. **Persistence key**: Always use `persistenceKey` (derived from `persistence.key ?? 'zs:${schema}:${table}'`) — never hardcode the key string.
+5. **Persistence key**: Always use `persistenceKey` (derived from `persistence.key ?? 'anchor:${schema}:${table}'`) — never hardcode the key string.
 6. **Error-check-first in auth**: Always check `error` before accessing `data.session`/`data.user` in auth methods.
 7. **No silent catches**: Every `.catch()` must either log via SyncLogger or surface error to store state. No `.catch(() => {})` without justification.
 8. **try/finally for flags**: The `flushing` flag in OfflineQueue and `receiving` flag in crossTabSync MUST use try/finally.

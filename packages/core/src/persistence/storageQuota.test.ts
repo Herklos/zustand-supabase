@@ -19,8 +19,8 @@ describe("StorageQuotaManager", () => {
     })
 
     it("counts keys with zs: prefix", async () => {
-      await adapter.setItem("zs:public:todos", [{ id: 1 }])
-      await adapter.setItem("zs:public:profiles", [{ id: 2 }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1 }])
+      await adapter.setItem("anchor:public:profiles", [{ id: 2 }])
       await adapter.setItem("other:key", "not counted by default")
 
       const usage = await manager.getUsage(adapter)
@@ -31,7 +31,7 @@ describe("StorageQuotaManager", () => {
     it("uses custom prefix", async () => {
       await adapter.setItem("custom:a", 1)
       await adapter.setItem("custom:b", 2)
-      await adapter.setItem("zs:c", 3)
+      await adapter.setItem("anchor:c", 3)
 
       const usage = await manager.getUsage(adapter, "custom:")
       expect(usage.count).toBe(2)
@@ -39,12 +39,12 @@ describe("StorageQuotaManager", () => {
 
     it("estimates bytes reasonably", async () => {
       const data = { id: 1, title: "Hello World" }
-      await adapter.setItem("zs:test", data)
+      await adapter.setItem("anchor:test", data)
 
       const usage = await manager.getUsage(adapter)
       const json = JSON.stringify(data)
       // Key + value, ~2 bytes per char
-      const expected = ("zs:test".length + json.length) * 2
+      const expected = ("anchor:test".length + json.length) * 2
       expect(usage.estimatedBytes).toBe(expected)
     })
 
@@ -73,21 +73,21 @@ describe("StorageQuotaManager", () => {
 
   describe("enforceLimit", () => {
     it("does nothing when no limit set", async () => {
-      await adapter.setItem("zs:public:todos", [{ id: 1 }, { id: 2 }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1 }, { id: 2 }])
       const removed = await manager.enforceLimit(adapter, "todos")
       expect(removed).toBe(0)
     })
 
     it("does nothing when under limit", async () => {
       manager.setTableLimit("todos", 5)
-      await adapter.setItem("zs:public:todos", [{ id: 1 }, { id: 2 }])
+      await adapter.setItem("anchor:public:todos", [{ id: 1 }, { id: 2 }])
       const removed = await manager.enforceLimit(adapter, "todos")
       expect(removed).toBe(0)
     })
 
     it("trims to limit, keeping newest records", async () => {
       manager.setTableLimit("todos", 2)
-      await adapter.setItem("zs:public:todos", [
+      await adapter.setItem("anchor:public:todos", [
         { id: 1, title: "oldest" },
         { id: 2, title: "middle" },
         { id: 3, title: "newest" },
@@ -96,7 +96,7 @@ describe("StorageQuotaManager", () => {
       const removed = await manager.enforceLimit(adapter, "todos")
       expect(removed).toBe(1)
 
-      const remaining = await adapter.getItem<any[]>("zs:public:todos")
+      const remaining = await adapter.getItem<any[]>("anchor:public:todos")
       expect(remaining).toHaveLength(2)
       expect(remaining![0].id).toBe(2)
       expect(remaining![1].id).toBe(3)
@@ -104,7 +104,7 @@ describe("StorageQuotaManager", () => {
 
     it("handles custom schema", async () => {
       manager.setTableLimit("todos", 1)
-      await adapter.setItem("zs:custom:todos", [
+      await adapter.setItem("anchor:custom:todos", [
         { id: 1 },
         { id: 2 },
         { id: 3 },
@@ -113,7 +113,7 @@ describe("StorageQuotaManager", () => {
       const removed = await manager.enforceLimit(adapter, "todos", "custom")
       expect(removed).toBe(2)
 
-      const remaining = await adapter.getItem<any[]>("zs:custom:todos")
+      const remaining = await adapter.getItem<any[]>("anchor:custom:todos")
       expect(remaining).toHaveLength(1)
       expect(remaining![0].id).toBe(3)
     })
@@ -127,40 +127,40 @@ describe("StorageQuotaManager", () => {
 
   describe("evictByCount", () => {
     it("does nothing when under maxRecords", async () => {
-      await adapter.setItem("zs:public:a", [1])
-      await adapter.setItem("zs:public:b", [2])
+      await adapter.setItem("anchor:public:a", [1])
+      await adapter.setItem("anchor:public:b", [2])
 
       const removed = await manager.evictByCount(adapter, { maxRecords: 5 })
       expect(removed).toBe(0)
     })
 
     it("removes oldest keys when over maxRecords", async () => {
-      await adapter.setItem("zs:public:a", [1])
-      await adapter.setItem("zs:public:b", [2])
-      await adapter.setItem("zs:public:c", [3])
+      await adapter.setItem("anchor:public:a", [1])
+      await adapter.setItem("anchor:public:b", [2])
+      await adapter.setItem("anchor:public:c", [3])
 
       const removed = await manager.evictByCount(adapter, { maxRecords: 1 })
       expect(removed).toBe(2)
 
-      const keys = await adapter.keys("zs:public:")
+      const keys = await adapter.keys("anchor:public:")
       expect(keys).toHaveLength(1)
     })
 
     it("skips internal keys", async () => {
-      await adapter.setItem("zs:__schema_version", 1)
-      await adapter.setItem("zs:__mutation_queue", [])
-      await adapter.setItem("zs:__temp_id_map", [])
-      await adapter.setItem("zs:public:todos", [1])
+      await adapter.setItem("anchor:__schema_version", 1)
+      await adapter.setItem("anchor:__mutation_queue", [])
+      await adapter.setItem("anchor:__temp_id_map", [])
+      await adapter.setItem("anchor:public:todos", [1])
 
       const removed = await manager.evictByCount(adapter, { maxRecords: 1 })
       expect(removed).toBe(0)
 
       // Internal keys should still exist
-      expect(await adapter.getItem("zs:__schema_version")).toBe(1)
+      expect(await adapter.getItem("anchor:__schema_version")).toBe(1)
     })
 
     it("returns 0 when maxRecords is undefined", async () => {
-      await adapter.setItem("zs:a", 1)
+      await adapter.setItem("anchor:a", 1)
       const removed = await manager.evictByCount(adapter, {})
       expect(removed).toBe(0)
     })

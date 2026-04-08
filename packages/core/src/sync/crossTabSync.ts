@@ -25,7 +25,7 @@ export function setupBroadcastSync(
   name: string,
   sessionId?: string,
 ): () => void {
-  const channel = new BroadcastChannel(`zs:${name}`)
+  const channel = new BroadcastChannel(`anchor:${name}`)
   let receiving = false
 
   channel.onmessage = (event: MessageEvent<CrossTabPayload>) => {
@@ -41,14 +41,14 @@ export function setupBroadcastSync(
       const incoming = new Map(event.data.records)
       // Preserve locally pending rows (optimistic mutations in flight)
       for (const [id, row] of current.records) {
-        if ((row as any)?._zs_pending) {
+        if ((row as any)?._anchor_pending) {
           incoming.set(id, row)
         }
       }
       const order = [...event.data.order]
       const orderSet = new Set<string | number>(order)
       for (const [id] of current.records) {
-        if ((current.records.get(id) as any)?._zs_pending && !orderSet.has(id as string | number)) {
+        if ((current.records.get(id) as any)?._anchor_pending && !orderSet.has(id as string | number)) {
           order.push(id as string | number)
           orderSet.add(id as string | number)
         }
@@ -78,7 +78,7 @@ export function setupBroadcastSync(
         sessionId,
       } satisfies CrossTabPayload)
     } catch (err) {
-      console.warn(`[zs:crossTab:${name}] Failed to broadcast:`, err)
+      console.warn(`[anchor:crossTab:${name}] Failed to broadcast:`, err)
     }
   })
 
@@ -99,7 +99,7 @@ export function setupStorageFallback(
   name: string,
   sessionId?: string,
 ): () => void {
-  const key = `zs:broadcast:${name}`
+  const key = `anchor:broadcast:${name}`
   let receiving = false
 
   const onStorage = (event: StorageEvent) => {
@@ -119,14 +119,14 @@ export function setupStorageFallback(
         const incoming = new Map(payload.records)
         // Preserve locally pending rows
         for (const [id, row] of current.records) {
-          if ((row as any)?._zs_pending) {
+          if ((row as any)?._anchor_pending) {
             incoming.set(id, row)
           }
         }
         const order = [...payload.order]
         const orderSet = new Set<string | number>(order)
         for (const [id] of current.records) {
-          if ((current.records.get(id) as any)?._zs_pending && !orderSet.has(id as string | number)) {
+          if ((current.records.get(id) as any)?._anchor_pending && !orderSet.has(id as string | number)) {
             order.push(id as string | number)
             orderSet.add(id as string | number)
           }
@@ -140,7 +140,7 @@ export function setupStorageFallback(
         receiving = false
       }
     } catch (err) {
-      console.warn(`[zs:crossTab:${name}] Failed to parse cross-tab data:`, err)
+      console.warn(`[anchor:crossTab:${name}] Failed to parse cross-tab data:`, err)
     }
   }
 
@@ -163,7 +163,7 @@ export function setupStorageFallback(
         } satisfies CrossTabPayload),
       )
     } catch (err) {
-      console.warn(`[zs:crossTab:${name}] Failed to persist cross-tab data:`, err)
+      console.warn(`[anchor:crossTab:${name}] Failed to persist cross-tab data:`, err)
     }
   })
 

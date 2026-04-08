@@ -62,7 +62,7 @@ export class RealtimeManager {
     // Unsubscribe from existing subscription for this table
     this.unsubscribe(table)
 
-    const channelName = `zs:${schema}:${table}`
+    const channelName = `anchor:${schema}:${table}`
     const channel = this.supabase.channel(channelName)
 
     onStatus("connecting")

@@ -149,7 +149,7 @@ export function createMutationExecutor(
           if (idx >= 0) order[idx] = id
         }
 
-        // Set confirmed server data (no _zs_ metadata)
+        // Set confirmed server data (no _anchor_ metadata)
         records.set(id, data)
         return { ...prev, records, order }
       })
