@@ -2,12 +2,16 @@
  * Example: Complete Todo app using zustand-supabase.
  *
  * Demonstrates:
- * - useQuery for data fetching with filters
+ * - useQuery for data fetching with filters and staleTime
+ * - useInfiniteQuery for cursor-based infinite scroll
+ * - useLinkedQuery for custom queries linked to store mutations
  * - useMutation for CRUD operations
  * - useAuth for authentication
  * - useRealtime for live updates
+ * - useSyncStatus / useQueueStatus for sync monitoring
  * - Optimistic updates (isPending helper)
  * - Offline support (queue status)
+ * - Cache strategy (merge mode + clearAndFetch)
  * - React Suspense integration
  */
 import React, { Suspense, useState } from "react"
@@ -17,11 +21,14 @@ import {
   useAuth,
   useRealtime,
   useSuspenseQuery,
+  useSyncStatus,
+  useQueueStatus,
   createTableHook,
   eq,
   query,
   isPending,
 } from "zustand-supabase"
+import { useInfiniteQuery, useLinkedQuery } from "zustand-supabase/hooks"
 import { stores, todosStore } from "./stores"
 
 // ─── Auth ────────────────────────────────────────────────────────────
@@ -70,6 +77,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Sync Status Bar ────────────────────────────────────────────────
+
+function SyncStatusBar() {
+  const { status, pendingCount, isSyncing } = useSyncStatus([
+    stores.todos,
+    stores.profiles,
+  ])
+  const { queueSize } = useQueueStatus(stores.todos)
+
+  return (
+    <div>
+      <span>
+        Sync: {status}
+        {isSyncing && " (syncing...)"}
+      </span>
+      {pendingCount > 0 && <span> | {pendingCount} pending</span>}
+      {queueSize > 0 && <span> | {queueSize} queued offline</span>}
+    </div>
+  )
+}
+
 // ─── Todo List with useQuery ─────────────────────────────────────────
 
 function TodoList() {
@@ -85,7 +113,8 @@ function TodoList() {
 
   const { data, isLoading, error, refetch } = useQuery(stores.todos, {
     filters: filterDescriptors,
-    deps: [filter], // Refetch when filter changes
+    deps: [filter],
+    staleTime: 5000, // skip refetch if fetched within 5s
   })
 
   const { insert, remove, isLoading: isMutating } = useMutation(stores.todos)
@@ -101,8 +130,6 @@ function TodoList() {
       {/* Status indicators */}
       <div>
         <span>Realtime: {realtimeStatus}</span>
-        {" | "}
-        <span>Queue: {stores.todos.getState().getQueueSize()} pending</span>
       </div>
 
       {/* Filter tabs */}
@@ -149,7 +176,11 @@ function TodoList() {
         </ul>
       )}
 
+      {/* Invalidate cache (useful with merge cacheStrategy) */}
       <button onClick={refetch}>Refresh</button>
+      <button onClick={() => stores.todos.getState().clearAndFetch()}>
+        Clear Cache & Refresh
+      </button>
     </div>
   )
 }
@@ -185,6 +216,67 @@ function TodoItem({
       {pending && <span> (saving...)</span>}
       <button onClick={() => onDelete(todo.id)}>X</button>
     </li>
+  )
+}
+
+// ─── Infinite Scroll Example ─────────────────────────────────────────
+
+function InfiniteTodoList() {
+  const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery(
+    stores.todos,
+    {
+      cursorColumn: "created_at",
+      pageSize: 20,
+      sort: [{ column: "created_at", ascending: false }],
+    },
+  )
+
+  return (
+    <div>
+      <h2>All Todos (Infinite Scroll)</h2>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          <ul>
+            {data.map((t) => (
+              <li key={t.id}>{t.title}</li>
+            ))}
+          </ul>
+          {hasNextPage && (
+            <button onClick={fetchNextPage}>Load more</button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Linked Query Example ────────────────────────────────────────────
+// Custom query that auto-refetches when linked stores mutate.
+// Useful for joins or complex selects that can't use useQuery directly.
+
+function TodoSummary() {
+  const { data, isLoading } = useLinkedQuery(
+    async () => {
+      const { data } = await stores.todos.getState().fetch()
+      if (!data) return { total: 0, completed: 0 }
+      return {
+        total: data.length,
+        completed: data.filter((t: any) => t.completed).length,
+      }
+    },
+    {
+      stores: [stores.todos], // refetch when todos store mutates
+      deps: [],
+    },
+  )
+
+  if (isLoading || !data) return null
+  return (
+    <div>
+      {data.completed}/{data.total} completed
+    </div>
   )
 }
 
@@ -237,8 +329,11 @@ function HighPriorityTodos() {
 export default function App() {
   return (
     <AuthGate>
+      <SyncStatusBar />
       <TodoList />
+      <TodoSummary />
       <HighPriorityTodos />
+      <InfiniteTodoList />
       <Suspense fallback={<div>Loading with Suspense...</div>}>
         <SuspenseTodoList />
       </Suspense>

@@ -3,9 +3,12 @@
  *
  * This file creates typed stores for all tables with:
  * - Offline-first persistence (localStorage)
- * - Realtime subscriptions
+ * - Realtime subscriptions with conflict resolution
  * - Network status detection
  * - Redux DevTools integration
+ * - App lifecycle management (auto-flush, revalidation on foreground)
+ * - Sync health monitoring
+ * - Cache strategy (merge mode)
  * - Custom extensions (computed values + actions)
  */
 import { createClient } from "@supabase/supabase-js"
@@ -13,10 +16,12 @@ import {
   createSupabaseStores,
   createTableStore,
   setupAuthGate,
+  SyncMetrics,
   isPending,
   eq,
 } from "zustand-supabase"
-import { LocalStorageAdapter, WebNetworkStatus } from "zustand-supabase-adapter-web"
+import { setupAppLifecycle } from "zustand-supabase/lifecycle"
+import { LocalStorageAdapter, WebNetworkStatus, WebAppLifecycle } from "zustand-supabase-adapter-web"
 import type { Database } from "./database.types"
 
 // ─── Supabase Client ─────────────────────────────────────────────────
@@ -25,6 +30,10 @@ const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 )
+
+// ─── Sync Metrics ────────────────────────────────────────────────────
+
+export const syncMetrics = new SyncMetrics()
 
 // ─── Option A: Quick setup with createSupabaseStores ─────────────────
 
@@ -35,10 +44,16 @@ export const stores = createSupabaseStores<Database>({
   network: new WebNetworkStatus(),
   realtime: { enabled: true },
   devtools: import.meta.env.DEV,
+  logger: syncMetrics,
   tableOptions: {
     todos: {
       defaultSort: [{ column: "created_at", ascending: false }],
       realtime: { events: ["INSERT", "UPDATE", "DELETE"] },
+      cacheStrategy: "merge", // accumulate records across filtered fetches
+      conflict: {
+        strategy: "last-write-wins",
+        timestampColumn: "updated_at",
+      },
     },
     profiles: {
       realtime: { enabled: false },
@@ -50,6 +65,19 @@ export const stores = createSupabaseStores<Database>({
 setupAuthGate(supabase, stores.auth, [stores.todos, stores.profiles], {
   clearOnSignOut: true,
   refetchOnSignIn: true,
+})
+
+// ─── App Lifecycle ───────────────────────────────────────────────────
+// Auto-flush queue, refresh auth, revalidate stale data on foreground
+
+export const cleanupLifecycle = setupAppLifecycle({
+  adapter: new WebAppLifecycle(),
+  stores: [stores.todos, stores.profiles],
+  authStore: stores.auth,
+  flushQueueOnForeground: true,
+  refreshAuthOnForeground: true,
+  revalidateOnForeground: true,
+  staleTTL: 5 * 60 * 1000, // 5 minutes
 })
 
 // ─── Option B: Single store with extensions ──────────────────────────

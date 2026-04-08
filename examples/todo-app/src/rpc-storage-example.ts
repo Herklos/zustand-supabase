@@ -1,7 +1,17 @@
 /**
- * Example: RPC, Storage, and Edge Functions usage.
+ * Example: RPC, Storage, Edge Functions, and utility features.
  *
- * These features are standalone and don't require Zustand stores.
+ * Demonstrates standalone features that don't require React components:
+ * - RPC with retry and caching
+ * - Edge Functions
+ * - Storage operations
+ * - Incremental & selective sync
+ * - Cache TTL / stale-while-revalidate
+ * - Circuit breaker & rate limiter
+ * - Client-side aggregation
+ * - Data encryption at rest
+ * - Schema versioning
+ * - Sync health metrics
  */
 import { createClient } from "@supabase/supabase-js"
 import {
@@ -11,8 +21,18 @@ import {
   incrementalSync,
   fetchWithSwr,
   setupAutoRevalidation,
+  withRetry,
+  CircuitBreaker,
+  RateLimiter,
+  aggregateLocal,
+  SyncMetrics,
 } from "zustand-supabase"
-import { stores } from "./stores"
+import { selectiveSync } from "zustand-supabase/sync/selective"
+import { EncryptedAdapter, createWebCryptoEncryption } from "zustand-supabase/persistence/encrypted"
+import { checkSchemaVersion } from "zustand-supabase/persistence/schemaVersion"
+import { LocalStorageAdapter } from "zustand-supabase-adapter-web"
+import { stores, syncMetrics } from "./stores"
+import { eq } from "zustand-supabase"
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -33,7 +53,11 @@ const getDashboardStats = createRpcAction<DashboardStats>(
 )
 
 async function showDashboard() {
-  const { data, error } = await getDashboardStats({ user_id: "123" })
+  // withRetry wraps any async call with exponential backoff + jitter
+  const { data, error } = await withRetry(
+    () => getDashboardStats({ user_id: "123" }),
+    { maxRetries: 3, baseDelay: 1000 },
+  )
   if (error) {
     console.error("RPC error:", error.message)
     return
@@ -84,7 +108,6 @@ async function uploadAvatar(userId: string, file: File) {
     return null
   }
 
-  // Get public URL
   const url = avatars.getPublicUrl(path)
   console.log("Avatar URL:", url)
   return url
@@ -112,6 +135,16 @@ async function syncTodos() {
   console.log(`Synced: ${fetchedCount} fetched, ${mergedCount} merged`)
 }
 
+// ─── Selective Sync ──────────────────────────────────────────────────
+// Sync only a subset of data (e.g., active todos only)
+
+async function syncActiveTodos() {
+  await selectiveSync(supabase, "todos", "id", stores.todos, {
+    filters: [eq("status", "active")],
+    timestampColumn: "updated_at",
+  })
+}
+
 // ─── Cache TTL: Stale-While-Revalidate ───────────────────────────────
 
 async function setupCaching() {
@@ -127,6 +160,79 @@ async function setupCaching() {
     checkInterval: 60 * 1000,
   })
 
-  // Call cleanup() to stop auto-revalidation
   return cleanup
+}
+
+// ─── Circuit Breaker ─────────────────────────────────────────────────
+// Protects against cascading failures from repeatedly calling failing endpoints
+
+const apiBreaker = new CircuitBreaker({
+  failureThreshold: 5,  // open after 5 failures
+  resetTimeout: 30000,  // try again after 30s (half-open)
+})
+
+async function fetchWithBreaker(url: string) {
+  return apiBreaker.execute(() => fetch(url))
+  // After 5 failures: throws immediately without calling fetch
+  // After 30s: allows one probe request (half-open state)
+}
+
+// ─── Rate Limiter ────────────────────────────────────────────────────
+// Token bucket algorithm to throttle requests
+
+const limiter = new RateLimiter({
+  maxTokens: 10,   // 10 burst
+  refillRate: 2,   // 2 tokens/sec refill
+})
+
+async function rateLimitedFetch(url: string) {
+  if (limiter.tryConsume()) {
+    return fetch(url)
+  }
+  throw new Error("Rate limited — try again later")
+}
+
+// ─── Client-Side Aggregation ─────────────────────────────────────────
+
+function getTodoStats() {
+  return aggregateLocal(stores.todos, {
+    total: "count",
+    avgPriority: { op: "avg", column: "priority" },
+    maxPriority: { op: "max", column: "priority" },
+  })
+}
+
+// ─── Data Encryption at Rest ─────────────────────────────────────────
+
+async function createEncryptedAdapter() {
+  const key = await crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"],
+  )
+  return new EncryptedAdapter(
+    new LocalStorageAdapter(),
+    createWebCryptoEncryption(key),
+  )
+}
+
+// ─── Schema Versioning ───────────────────────────────────────────────
+// Automatically clear stale cache when schema changes
+
+async function ensureSchemaVersion(adapter: any) {
+  const { versionChanged } = await checkSchemaVersion(adapter, 2)
+  if (versionChanged) {
+    console.log("Schema changed — cache cleared, will re-fetch from Supabase")
+  }
+}
+
+// ─── Sync Health Metrics ─────────────────────────────────────────────
+
+function logSyncHealth() {
+  const snap = syncMetrics.getMetrics()
+  console.log("Sync health:", {
+    fetchLatencyP95: snap.fetchLatencyP95,
+    mutationErrorCount: snap.mutationErrorCount,
+    conflictCount: snap.conflictCount,
+  })
 }

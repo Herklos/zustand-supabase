@@ -95,6 +95,11 @@ When passed to standalone `createTableStore()`, these trigger a `console.warn`. 
 - Use `MemoryAdapter` for persistence tests
 - Test files excluded from tsconfig (avoids noUnusedLocals on test imports)
 
+## Change Process
+
+- **CHANGELOG.md must be updated** with every user-facing change (features, fixes, breaking changes, build/packaging). Add entries under the appropriate version heading before committing.
+- Update `examples/todo-app` when adding new features or APIs to keep examples current.
+
 ## Common Pitfalls
 
 - **Don't set `error: null` in confirmation `set()` calls** — it masks concurrent errors. Only clear error in the optimistic-apply step.
