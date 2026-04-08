@@ -8,6 +8,7 @@ import type {
   SortDescriptor,
   PersistenceAdapter,
   SyncLogger,
+  CacheStrategy,
 } from "./types.js"
 import { createTableStore } from "./createTableStore.js"
 
@@ -20,6 +21,7 @@ export type ViewStore<Row> = TableStoreState<Row> & {
   persist: () => Promise<void>
   clearAll: () => void
   mergeRecords: (rows: Row[]) => void
+  clearAndFetch: (options?: FetchOptions<Row>) => Promise<TrackedRow<Row>[]>
 }
 
 export type CreateViewStoreOptions<DB, Row extends Record<string, unknown>> = {
@@ -31,6 +33,7 @@ export type CreateViewStoreOptions<DB, Row extends Record<string, unknown>> = {
   defaultSort?: SortDescriptor<Row>[]
   defaultSelect?: string
   persistence?: { adapter: PersistenceAdapter }
+  cacheStrategy?: CacheStrategy
   devtools?: boolean | { name?: string }
   logger?: SyncLogger
 }

@@ -78,6 +78,14 @@ export type TrackedRow<Row> = Row & Partial<RecordMeta>
 
 export type RealtimeEvent = "INSERT" | "UPDATE" | "DELETE" | "*"
 
+// ─── Cache Strategy ─────────────────────────────────────────────────
+
+/** Controls how fetch() handles existing records.
+ *  - "replace": Each fetch replaces all records (store is a window into the latest query)
+ *  - "merge": Each fetch merges new records into existing ones (records accumulate,
+ *    order reflects only the latest query) */
+export type CacheStrategy = "replace" | "merge"
+
 // ─── Filter & Query Types ────────────────────────────────────────────
 
 export type FilterOperator =
@@ -121,6 +129,8 @@ export type FetchOptions<Row = Record<string, unknown>> = {
   count?: "exact" | "planned" | "estimated"
   /** Escape hatch: direct access to the PostgREST query builder */
   queryFn?: (builder: unknown) => unknown
+  /** Override the store's default cache strategy for this fetch */
+  cacheStrategy?: CacheStrategy
 }
 
 // ─── Table Store State ───────────────────────────────────────────────
@@ -178,6 +188,7 @@ export type TableStoreActions<
   removeRecord: (id: string | number) => void
   clearAll: () => void
   mergeRecords: (rows: Row[]) => void
+  clearAndFetch: (options?: FetchOptions<Row>) => Promise<TrackedRow<Row>[]>
 
   // Realtime
   subscribe: (filter?: FilterDescriptor<Row>[]) => () => void
@@ -451,6 +462,9 @@ export type CreateTableStoreOptions<
   defaultSort?: SortDescriptor<Row>[]
   defaultSelect?: string
 
+  // Cache strategy
+  cacheStrategy?: CacheStrategy
+
   // Persistence
   persistence?: {
     adapter: PersistenceAdapter
@@ -524,6 +538,7 @@ export type CreateSupabaseStoresOptions<
   network?: NetworkStatusAdapter
   realtime?: { enabled?: boolean }
   conflict?: ConflictConfig
+  cacheStrategy?: CacheStrategy
   /** Pass the `immer` middleware from `zustand/middleware/immer` */
   immer?: (config: any) => any
   devtools?: boolean
@@ -544,6 +559,7 @@ export type CreateSupabaseStoresOptions<
           filter?: string
         }
         conflict?: ConflictConfig
+        cacheStrategy?: CacheStrategy
       }
     >
   >

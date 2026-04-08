@@ -89,6 +89,7 @@ export function createSupabaseStores<
         : undefined,
       network,
       conflict: (tableOpts?.conflict as any) ?? conflict,
+      cacheStrategy: (tableOpts?.cacheStrategy as any) ?? options.cacheStrategy,
       immer,
       devtools,
       logger,
