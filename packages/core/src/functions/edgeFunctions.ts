@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { withRetry, type RetryOptions } from "../utils/retry.js"
 
 export type EdgeFunctionResult<T> = {
   data: T | null
@@ -9,6 +10,8 @@ export type InvokeOptions = {
   headers?: Record<string, string>
   body?: unknown
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+  /** Retry configuration for transient failures */
+  retry?: RetryOptions
 }
 
 /**
@@ -19,15 +22,24 @@ export async function invokeEdgeFunction<T = unknown>(
   functionName: string,
   options?: InvokeOptions,
 ): Promise<EdgeFunctionResult<T>> {
-  try {
+  const execute = async (): Promise<EdgeFunctionResult<T>> => {
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: options?.body as Record<string, unknown> | undefined,
       headers: options?.headers,
       method: options?.method,
     })
 
-    if (error) return { data: null, error: new Error(error.message) }
+    if (error) {
+      throw new Error(error.message)
+    }
     return { data: data as T, error: null }
+  }
+
+  try {
+    if (options?.retry) {
+      return await withRetry(execute, options.retry)
+    }
+    return await execute()
   } catch (err) {
     return {
       data: null,

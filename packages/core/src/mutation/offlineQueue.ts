@@ -49,6 +49,8 @@ export class OfflineQueue {
   private unsubNetwork: (() => void) | null = null
   /** Persisted temp ID → real ID mappings that survive across flushes */
   private persistedTempIdMap = new Map<string, unknown>()
+  /** Current user ID for mutation attribution and isolation */
+  private currentUserId: string | undefined
 
   private readonly adapter?: PersistenceAdapter
   private readonly network?: NetworkStatusAdapter
@@ -72,6 +74,17 @@ export class OfflineQueue {
     this.logger = options.logger ?? noopLogger
     this.onRollback = options.onRollback
     this.onTempIdResolved = options.onTempIdResolved
+  }
+
+  // ── User Context ─────────────────────────────────────────────────
+
+  /**
+   * Set the current user ID. Mutations enqueued after this call
+   * will be tagged with this userId. On flush, only mutations
+   * matching the current userId (or untagged) are executed.
+   */
+  setUserId(userId: string | undefined): void {
+    this.currentUserId = userId
   }
 
   // ── Registration ─────────────────────────────────────────────────
@@ -102,6 +115,10 @@ export class OfflineQueue {
   async enqueue(mutation: QueuedMutation): Promise<void> {
     if (!this.executors.has(mutation.table)) {
       console.warn(`[zs:queue] No executor registered for table "${mutation.table}" — mutation may not flush`)
+    }
+    // Tag with current user for multi-user isolation
+    if (this.currentUserId && !mutation.userId) {
+      mutation.userId = this.currentUserId
     }
     this.queue.push(mutation)
     await this.persist()
@@ -200,7 +217,10 @@ export class OfflineQueue {
       this.compact()
 
       const pending = this.queue.filter(
-        (m) => m.status === "pending" || m.status === "failed",
+        (m) =>
+          (m.status === "pending" || m.status === "failed") &&
+          // Skip mutations belonging to a different user
+          (!m.userId || !this.currentUserId || m.userId === this.currentUserId),
       )
 
       if (pending.length === 0) {
@@ -418,6 +438,17 @@ export class OfflineQueue {
   }
 
   // ── Cleanup ──────────────────────────────────────────────────────
+
+  /**
+   * Clear all queued mutations and persisted state without stopping auto-flush.
+   * Use on sign-out to prevent orphaned mutations from executing under a different user.
+   */
+  async clearQueue(): Promise<void> {
+    this.queue = []
+    this.persistedTempIdMap.clear()
+    await this.persist()
+    await this.persistTempIdMap()
+  }
 
   destroy(): void {
     this.stopAutoFlush()

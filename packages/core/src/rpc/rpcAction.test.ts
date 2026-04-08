@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest"
-import { callRpc, createRpcAction } from "./rpcAction.js"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { callRpc, createRpcAction, invalidateRpcCache } from "./rpcAction.js"
 
 function createMockSupabase(rpcResult: { data: any; error: any }) {
   return {
@@ -74,6 +74,57 @@ describe("createRpcAction", () => {
     const action = createRpcAction(supabase, "ping")
     await action()
     await action()
+
+    expect(supabase.rpc).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("RPC caching", () => {
+  beforeEach(() => {
+    invalidateRpcCache()
+  })
+
+  it("caches results within TTL", async () => {
+    const supabase = createMockSupabase({ data: 42, error: null })
+
+    await callRpc(supabase, "get_count", undefined, { cache: { ttlMs: 5000 } })
+    await callRpc(supabase, "get_count", undefined, { cache: { ttlMs: 5000 } })
+
+    expect(supabase.rpc).toHaveBeenCalledTimes(1)
+  })
+
+  it("deduplicates in-flight requests", async () => {
+    let resolveRpc: (val: any) => void
+    const supabase = {
+      rpc: vi.fn().mockReturnValue(new Promise(r => { resolveRpc = r })),
+    } as any
+
+    const p1 = callRpc(supabase, "slow_fn", undefined, { cache: { ttlMs: 5000 } })
+    const p2 = callRpc(supabase, "slow_fn", undefined, { cache: { ttlMs: 5000 } })
+
+    resolveRpc!({ data: "done", error: null })
+    const [r1, r2] = await Promise.all([p1, p2])
+
+    expect(supabase.rpc).toHaveBeenCalledTimes(1)
+    expect(r1.data).toBe("done")
+    expect(r2.data).toBe("done")
+  })
+
+  it("invalidateRpcCache clears specific function cache", async () => {
+    const supabase = createMockSupabase({ data: 1, error: null })
+
+    await callRpc(supabase, "fn_a", undefined, { cache: { ttlMs: 5000 } })
+    invalidateRpcCache("fn_a")
+    await callRpc(supabase, "fn_a", undefined, { cache: { ttlMs: 5000 } })
+
+    expect(supabase.rpc).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not cache errors", async () => {
+    const supabase = createMockSupabase({ data: null, error: { message: "fail" } })
+
+    await callRpc(supabase, "bad_fn", undefined, { cache: { ttlMs: 5000 } })
+    await callRpc(supabase, "bad_fn", undefined, { cache: { ttlMs: 5000 } })
 
     expect(supabase.rpc).toHaveBeenCalledTimes(2)
   })

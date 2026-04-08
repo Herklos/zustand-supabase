@@ -147,6 +147,17 @@ export class RealtimeManager {
     }
   }
 
+  /**
+   * Pause all realtime subscriptions (unsubscribes channels but remembers them).
+   * Use on sign-out or app background. Call resume() to resubscribe.
+   */
+  pause(): void {
+    for (const [, sub] of this.subscriptions) {
+      this.supabase.removeChannel(sub.channel)
+      sub.status = "disconnected"
+    }
+  }
+
   destroy(): void {
     const tables = [...this.subscriptions.keys()]
     for (const table of tables) {

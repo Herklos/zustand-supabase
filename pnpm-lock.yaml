@@ -35,6 +35,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.0
         version: 2.102.1
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.3)

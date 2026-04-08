@@ -79,6 +79,46 @@ describe("createAuthStore", () => {
     })
   })
 
+  describe("claims", () => {
+    it("starts with empty claims", () => {
+      const store = createAuthStore({ supabase })
+      expect(store.getState().claims).toEqual({})
+    })
+
+    it("parses JWT claims on sign-in", async () => {
+      // Create a mock JWT with custom claims
+      const payload = { sub: "user-1", role: "admin", org_id: "org-123" }
+      const fakeJwt = `header.${btoa(JSON.stringify(payload))}.signature`
+      supabase._setSession({ access_token: fakeJwt, user: { id: "user-1", email: "a@b.com" } })
+
+      const store = createAuthStore({ supabase })
+      await store.getState().initialize()
+
+      expect(store.getState().claims.role).toBe("admin")
+      expect(store.getState().claims.org_id).toBe("org-123")
+    })
+
+    it("getClaim returns specific claim value", async () => {
+      const payload = { sub: "user-1", role: "editor" }
+      const fakeJwt = `header.${btoa(JSON.stringify(payload))}.signature`
+      supabase._setSession({ access_token: fakeJwt, user: { id: "user-1", email: "a@b.com" } })
+
+      const store = createAuthStore({ supabase })
+      await store.getState().initialize()
+
+      expect(store.getState().getClaim("role")).toBe("editor")
+      expect(store.getState().getClaim("nonexistent")).toBeUndefined()
+    })
+
+    it("clears claims on sign-out", async () => {
+      const store = createAuthStore({ supabase })
+      await store.getState().signIn({ email: "a@b.com", password: "x" })
+      await store.getState().signOut()
+
+      expect(store.getState().claims).toEqual({})
+    })
+  })
+
   describe("onAuthStateChange", () => {
     it("subscribes to auth changes and returns unsubscribe", () => {
       const store = createAuthStore({ supabase })

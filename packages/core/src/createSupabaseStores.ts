@@ -11,6 +11,7 @@ import { RealtimeManager } from "./realtime/realtimeManager.js"
 import { bindRealtimeToStore } from "./realtime/realtimeBindings.js"
 import { OfflineQueue } from "./mutation/offlineQueue.js"
 import { createMutationExecutor } from "./mutation/mutationPipeline.js"
+import { setupAuthGate } from "./auth/authGate.js"
 
 /**
  * Creates typed stores for all specified tables in a Supabase Database.
@@ -133,6 +134,32 @@ export function createSupabaseStores<
   const authStore = auth
     ? createAuthStore({ supabase: supabase as SupabaseClient, devtools: !!devtools })
     : createAuthStore({ supabase: supabase as SupabaseClient })
+
+  // Wire auth gate with shared realtime + queue instances
+  if (auth) {
+    const tableStoreList = Object.values(stores) as StoreApi<TableStore<any, any, any>>[]
+    const unsubAuthGate = setupAuthGate(
+      supabase as SupabaseClient,
+      authStore,
+      tableStoreList,
+      {
+        realtimeManager,
+        offlineQueue,
+        onAuthChange: (_event, session) => {
+          // Keep offline queue's userId in sync with current auth
+          const userId = (session as any)?.user?.id as string | undefined
+          offlineQueue.setUserId(userId)
+        },
+      },
+    )
+    cleanupFns.push(unsubAuthGate)
+
+    // Set initial userId from auth store state
+    const initialUser = authStore.getState().user
+    if (initialUser?.id) {
+      offlineQueue.setUserId(initialUser.id)
+    }
+  }
 
   // Hydrate offline queue
   offlineQueue.hydrate().then(() => {

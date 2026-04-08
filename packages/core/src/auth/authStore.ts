@@ -1,10 +1,28 @@
-import type { SupabaseClient } from "@supabase/supabase-js"
+import type { SupabaseClient, Session } from "@supabase/supabase-js"
 import { createStore, type StoreApi } from "zustand/vanilla"
 import type { AuthStore } from "../types.js"
 
 type CreateAuthStoreOptions = {
   supabase: SupabaseClient
   devtools?: boolean
+}
+
+/**
+ * Decode JWT claims from a Supabase session's access token.
+ * Only reads the payload (no crypto verification — Supabase handles that).
+ */
+function parseJwtClaims(session: Session | null): Record<string, unknown> {
+  if (!session?.access_token) return {}
+  try {
+    const parts = session.access_token.split(".")
+    if (parts.length !== 3) return {}
+    // base64url → base64 → decode
+    const b64 = parts[1]!.replace(/-/g, "+").replace(/_/g, "/")
+    const decoded = atob(b64)
+    return JSON.parse(decoded) as Record<string, unknown>
+  } catch {
+    return {}
+  }
 }
 
 /**
@@ -15,12 +33,13 @@ export function createAuthStore(
 ): StoreApi<AuthStore> {
   const { supabase } = options
 
-  return createStore<AuthStore>()((set, _get) => ({
+  return createStore<AuthStore>()((set, get) => ({
     // State
     session: null,
     user: null,
     isLoading: true,
     error: null,
+    claims: {},
 
     // Actions
     async initialize() {
@@ -35,6 +54,7 @@ export function createAuthStore(
           user: session?.user ?? null,
           isLoading: false,
           error: error ? new Error(error.message) : null,
+          claims: parseJwtClaims(session),
         })
       } catch (err) {
         set({
@@ -60,6 +80,7 @@ export function createAuthStore(
         user: data.user,
         isLoading: false,
         error: null,
+        claims: parseJwtClaims(data.session),
       })
     },
 
@@ -80,6 +101,7 @@ export function createAuthStore(
         user: data.user,
         isLoading: false,
         error: null,
+        claims: parseJwtClaims(data.session),
       })
     },
 
@@ -97,6 +119,7 @@ export function createAuthStore(
         user: null,
         isLoading: false,
         error: null,
+        claims: {},
       })
     },
 
@@ -129,6 +152,7 @@ export function createAuthStore(
           session: data.session,
           user: data.user,
           error: null,
+          claims: parseJwtClaims(data.session),
         })
       } catch (err) {
         set({
@@ -145,10 +169,15 @@ export function createAuthStore(
           session,
           user: session?.user ?? null,
           isLoading: false,
+          claims: parseJwtClaims(session),
         })
       })
 
       return () => subscription.unsubscribe()
+    },
+
+    getClaim(key: string) {
+      return get().claims[key]
     },
   }))
 }

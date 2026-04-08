@@ -224,6 +224,8 @@ export type QueuedMutation = {
   retryCount: number
   lastError?: string
   rollbackSnapshot: Record<string, unknown> | null
+  /** User who enqueued this mutation (for multi-user isolation) */
+  userId?: string
 }
 
 // ─── Temp ID Management ──────────────────────────────────────────────
@@ -328,6 +330,8 @@ export type AuthState = {
   user: import("@supabase/supabase-js").User | null
   isLoading: boolean
   error: Error | null
+  /** Parsed custom claims from the JWT access token */
+  claims: Record<string, unknown>
 }
 
 export type AuthActions = {
@@ -347,6 +351,8 @@ export type AuthActions = {
   }) => Promise<void>
   refreshSession: () => Promise<void>
   onAuthStateChange: () => () => void
+  /** Get a specific claim from the JWT access token */
+  getClaim: (key: string) => unknown
 }
 
 export type AuthStore = AuthState & AuthActions
