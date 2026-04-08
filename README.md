@@ -19,6 +19,11 @@
 - **Auth integration** with session-gated stores and RLS awareness
 - **React Suspense** and **Server Components** support
 - **Storage & Edge Functions** — full Supabase feature coverage
+- **Query cache strategy** — configurable replace vs merge mode per store or per fetch
+- **Infinite scroll** — `useInfiniteQuery` hook with cursor-based load-more
+- **Retry with backoff** — `withRetry()` utility for RPC, Edge Functions, and Storage
+- **Circuit breaker & rate limiter** — protect failing endpoints and throttle requests
+- **Client/server aggregation** — `aggregateLocal()` for in-memory, `aggregateRpc()` for Postgres
 - **Cursor pagination**, **incremental sync**, **selective sync**, **cache TTL**
 - **App lifecycle management** — auto-flush, session refresh, stale revalidation on foreground
 - **Background sync** — flush offline queue in background via expo-task-manager
@@ -190,6 +195,7 @@ Every table store provides these actions:
 | `flushQueue()` | Flush the offline mutation queue |
 | `getQueueSize()` | Number of pending mutations |
 | `clearAll()` | Clear all records |
+| `clearAndFetch(options?)` | Clear cache and re-fetch (invalidation for merge mode) |
 | `mergeRecords(rows)` | Merge remote rows (skip pending) |
 
 ### Hooks
@@ -255,6 +261,32 @@ function TodoList() {
 <Suspense fallback={<Spinner />}>
   <TodoList />
 </Suspense>
+```
+
+#### `useInfiniteQuery(store, options)`
+
+Cursor-based infinite scroll with load-more support.
+
+```tsx
+import { useInfiniteQuery } from 'zustand-supabase/hooks'
+
+function InfiniteTodoList() {
+  const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery(
+    stores.todos,
+    {
+      cursorColumn: 'created_at',
+      pageSize: 20,
+      sort: [{ column: 'created_at', ascending: false }],
+    },
+  )
+
+  return (
+    <>
+      <ul>{data.map(t => <li key={t.id}>{t.title}</li>)}</ul>
+      {hasNextPage && <button onClick={fetchNextPage}>Load more</button>}
+    </>
+  )
+}
 ```
 
 #### `useAuth(authStore)`
@@ -528,6 +560,36 @@ const cleanup = setupAutoRevalidation(stores.todos, {
 })
 ```
 
+### Query Cache Strategy
+
+Control how `fetch()` handles existing records — replace all (default) or merge into the cache:
+
+```typescript
+// Store-level: all fetches accumulate records
+const todosStore = createTableStore({
+  supabase,
+  table: 'todos',
+  cacheStrategy: 'merge', // 'replace' (default) | 'merge'
+})
+
+// In merge mode:
+// - `records` accumulates all seen data (cache)
+// - `order` reflects only the latest query (view)
+await todosStore.getState().fetch()                                    // records: [1,2,3], order: [1,2,3]
+await todosStore.getState().fetch({ filters: [eq('completed', true)] }) // records: [1,2,3], order: [2]
+
+// Per-fetch override
+await store.getState().fetch({
+  filters: [eq('status', 'active')],
+  cacheStrategy: 'merge', // override for this call only
+})
+
+// Invalidate accumulated cache
+await store.getState().clearAndFetch()
+```
+
+Also available on `createSupabaseStores()` (global and per-table) and `createViewStore()`.
+
 ### Cross-Tab Sync
 
 State changes sync across browser tabs:
@@ -717,6 +779,65 @@ auditLog.onConflict((entry) => {
 })
 
 const log = auditLog.getLog({ table: 'todos', since: Date.now() - 60000 })
+```
+
+### Retry with Backoff
+
+Wrap any async operation with exponential backoff and jitter:
+
+```typescript
+import { withRetry } from 'zustand-supabase'
+
+const result = await withRetry(() => createRpcAction(supabase, 'heavy_query')(), {
+  maxRetries: 3,
+  baseDelay: 1000,
+})
+```
+
+### Circuit Breaker
+
+Protect against cascading failures from repeatedly calling failing endpoints:
+
+```typescript
+import { CircuitBreaker } from 'zustand-supabase'
+
+const breaker = new CircuitBreaker({ failureThreshold: 5, resetTimeout: 30000 })
+
+const result = await breaker.execute(() => fetch('/api/unstable'))
+// After 5 failures: throws immediately without calling the function
+// After 30s: allows one probe request (half-open state)
+```
+
+### Rate Limiter
+
+Throttle requests using a token bucket algorithm:
+
+```typescript
+import { RateLimiter } from 'zustand-supabase'
+
+const limiter = new RateLimiter({ maxTokens: 10, refillRate: 2 }) // 10 burst, 2/sec refill
+
+if (limiter.tryConsume()) {
+  await fetch('/api/resource')
+}
+```
+
+### Aggregation
+
+Client-side and server-side aggregation:
+
+```typescript
+import { aggregateLocal, aggregateRpc } from 'zustand-supabase'
+
+// Client-side (on store data)
+const stats = aggregateLocal(stores.todos, {
+  total: 'count',
+  avgPriority: { op: 'avg', column: 'priority' },
+  maxPriority: { op: 'max', column: 'priority' },
+})
+
+// Server-side (via Postgres function)
+const serverStats = await aggregateRpc(supabase, 'aggregate_todos', { user_id: '123' })
 ```
 
 ### Storage
