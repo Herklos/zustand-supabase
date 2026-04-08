@@ -27,8 +27,8 @@ import {
   eq,
   query,
   isPending,
-} from "anchor"
-import { useInfiniteQuery, useLinkedQuery } from "anchor/hooks"
+} from "@drakkar.software/anchor"
+import { useInfiniteQuery, useLinkedQuery } from "@drakkar.software/anchor/hooks"
 import { stores, todosStore } from "./stores"
 
 // ─── Auth ────────────────────────────────────────────────────────────

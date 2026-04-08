@@ -211,8 +211,8 @@
 
 ### Platform Adapters
 
-- **`anchor-adapter-web`**: `LocalStorageAdapter`, `IndexedDBAdapter`, `WebNetworkStatus`
-- **`anchor-adapter-react-native`**: `AsyncStorageAdapter`, `ExpoSQLiteAdapter`, `RNNetworkStatus`
+- **`@drakkar.software/anchor-adapter-web`**: `LocalStorageAdapter`, `IndexedDBAdapter`, `WebNetworkStatus`
+- **`@drakkar.software/anchor-adapter-react-native`**: `AsyncStorageAdapter`, `ExpoSQLiteAdapter`, `RNNetworkStatus`
 
 ### Developer Experience
 

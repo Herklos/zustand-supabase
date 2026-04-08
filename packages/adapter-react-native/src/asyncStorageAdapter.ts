@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "anchor/persistence"
+import type { PersistenceAdapter } from "@drakkar.software/anchor/persistence"
 
 /**
  * React Native persistence adapter using @react-native-async-storage/async-storage.

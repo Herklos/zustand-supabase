@@ -26,13 +26,13 @@ import {
   RateLimiter,
   aggregateLocal,
   SyncMetrics,
-} from "anchor"
-import { selectiveSync } from "anchor/sync/selective"
-import { EncryptedAdapter, createWebCryptoEncryption } from "anchor/persistence/encrypted"
-import { checkSchemaVersion } from "anchor/persistence/schemaVersion"
-import { LocalStorageAdapter } from "anchor-adapter-web"
+} from "@drakkar.software/anchor"
+import { selectiveSync } from "@drakkar.software/anchor/sync/selective"
+import { EncryptedAdapter, createWebCryptoEncryption } from "@drakkar.software/anchor/persistence/encrypted"
+import { checkSchemaVersion } from "@drakkar.software/anchor/persistence/schemaVersion"
+import { LocalStorageAdapter } from "@drakkar.software/anchor-adapter-web"
 import { stores, syncMetrics } from "./stores"
-import { eq } from "anchor"
+import { eq } from "@drakkar.software/anchor"
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,

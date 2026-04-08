@@ -1,4 +1,4 @@
-import type { AppLifecycleAdapter } from "anchor"
+import type { AppLifecycleAdapter } from "@drakkar.software/anchor"
 
 /**
  * Web implementation of AppLifecycleAdapter using the Page Visibility API.

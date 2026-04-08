@@ -1,5 +1,5 @@
 {
-  "name": "anchor-adapter-web",
+  "name": "@drakkar.software/anchor-adapter-web",
   "version": "1.0.0",
   "description": "Web platform adapters for Anchor (localStorage, IndexedDB)",
   "repository": {
@@ -30,10 +30,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "anchor": ">=1.0.0"
+    "@drakkar.software/anchor": ">=1.0.0"
   },
   "devDependencies": {
-    "anchor": "workspace:*",
+    "@drakkar.software/anchor": "workspace:*",
     "typescript": "^5.7.0",
     "tsup": "^8.0.0"
   },

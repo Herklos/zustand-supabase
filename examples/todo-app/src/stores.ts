@@ -19,9 +19,9 @@ import {
   SyncMetrics,
   isPending,
   eq,
-} from "anchor"
-import { setupAppLifecycle } from "anchor/lifecycle"
-import { LocalStorageAdapter, WebNetworkStatus, WebAppLifecycle } from "anchor-adapter-web"
+} from "@drakkar.software/anchor"
+import { setupAppLifecycle } from "@drakkar.software/anchor/lifecycle"
+import { LocalStorageAdapter, WebNetworkStatus, WebAppLifecycle } from "@drakkar.software/anchor-adapter-web"
 import type { Database } from "./database.types"
 
 // ─── Supabase Client ─────────────────────────────────────────────────

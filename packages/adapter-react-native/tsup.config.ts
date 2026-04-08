@@ -8,7 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: [
-    "anchor",
+    "@drakkar.software/anchor",
     "expo-sqlite",
     "@react-native-async-storage/async-storage",
     "@react-native-community/netinfo",

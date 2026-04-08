@@ -1,5 +1,5 @@
 {
-  "name": "anchor",
+  "name": "@drakkar.software/anchor",
   "version": "1.0.0",
   "description": "Anchor: auto-generated Zustand stores for Supabase, offline-first, realtime, type-safe",
   "repository": {

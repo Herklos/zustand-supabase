@@ -9,7 +9,7 @@
 // This runs on the server. No hooks, no state.
 
 import { createClient } from "@supabase/supabase-js"
-import { prefetch } from "anchor"
+import { prefetch } from "@drakkar.software/anchor"
 import type { Database } from "./database.types"
 
 type TodoRow = Database["public"]["Tables"]["todos"]["Row"]

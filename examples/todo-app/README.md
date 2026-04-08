@@ -1,6 +1,6 @@
 # Todo App Example
 
-A complete example demonstrating all anchor features.
+A complete example demonstrating all @drakkar.software/anchor features.
 
 ## Files
 

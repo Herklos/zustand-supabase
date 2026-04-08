@@ -5,9 +5,9 @@
 TypeScript library that binds Zustand state management to Supabase. Auto-generates stores from schema with offline-first, realtime, and optimistic updates.
 
 **Monorepo structure:**
-- `packages/core` — main library (`anchor`)
-- `packages/adapter-web` — web adapters (`anchor-adapter-web`)
-- `packages/adapter-react-native` — RN adapters (`anchor-adapter-react-native`)
+- `packages/core` — main library (`@drakkar.software/anchor`)
+- `packages/adapter-web` — web adapters (`@drakkar.software/anchor-adapter-web`)
+- `packages/adapter-react-native` — RN adapters (`@drakkar.software/anchor-adapter-react-native`)
 - `examples/todo-app` — complete example app
 
 ## Build & Test Commands

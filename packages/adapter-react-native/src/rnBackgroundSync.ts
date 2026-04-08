@@ -1,4 +1,4 @@
-import type { BackgroundTaskAdapter } from "anchor"
+import type { BackgroundTaskAdapter } from "@drakkar.software/anchor"
 
 /**
  * React Native implementation of BackgroundTaskAdapter using

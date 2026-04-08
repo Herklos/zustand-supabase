@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "anchor"
+import type { NetworkStatusAdapter } from "@drakkar.software/anchor"
 
 /**
  * React Native network status adapter using @react-native-community/netinfo.

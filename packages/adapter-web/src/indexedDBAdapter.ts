@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "anchor/persistence"
+import type { PersistenceAdapter } from "@drakkar.software/anchor/persistence"
 
 const DB_NAME = "anchor"
 const STORE_NAME = "kv"

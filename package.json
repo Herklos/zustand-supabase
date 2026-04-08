@@ -1,5 +1,5 @@
 {
-  "name": "anchor-monorepo",
+  "name": "@drakkar.software/anchor-monorepo",
   "private": true,
   "packageManager": "pnpm@10.25.0",
   "scripts": {

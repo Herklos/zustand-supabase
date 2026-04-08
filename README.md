@@ -22,11 +22,11 @@
 ## Installation
 
 ```bash
-npm install anchor zustand @supabase/supabase-js
+npm install @drakkar.software/anchor zustand @supabase/supabase-js
 # Web adapters
-npm install anchor-adapter-web
+npm install @drakkar.software/anchor-adapter-web
 # React Native adapters
-npm install anchor-adapter-react-native
+npm install @drakkar.software/anchor-adapter-react-native
 ```
 
 ## Quick Start
@@ -41,8 +41,8 @@ npx supabase gen types typescript --project-id $PROJECT_REF > database.types.ts
 
 ```typescript
 import { createClient } from '@supabase/supabase-js'
-import { createSupabaseStores } from 'anchor'
-import { LocalStorageAdapter, WebNetworkStatus } from 'anchor-adapter-web'
+import { createSupabaseStores } from '@drakkar.software/anchor'
+import { LocalStorageAdapter, WebNetworkStatus } from '@drakkar.software/anchor-adapter-web'
 import type { Database } from './database.types'
 
 const supabase = createClient<Database>(
@@ -63,7 +63,7 @@ export const stores = createSupabaseStores<Database>({
 ### 3. Use in React components
 
 ```tsx
-import { useQuery, useMutation, eq, isPending } from 'anchor'
+import { useQuery, useMutation, eq, isPending } from '@drakkar.software/anchor'
 
 function TodoList() {
   const { data, isLoading } = useQuery(stores.todos, {
@@ -220,7 +220,7 @@ await remove(1)
 Custom query that auto-refetches when linked stores mutate. Use for queries with joins or complex selects that can't use `useQuery` directly.
 
 ```tsx
-import { useLinkedQuery } from 'anchor/hooks'
+import { useLinkedQuery } from '@drakkar.software/anchor/hooks'
 
 const { data, isLoading, error, refetch } = useLinkedQuery(
   () => fetchOfferApplications(supabase, offerId),
@@ -253,7 +253,7 @@ function TodoList() {
 Cursor-based infinite scroll with load-more support.
 
 ```tsx
-import { useInfiniteQuery } from 'anchor/hooks'
+import { useInfiniteQuery } from '@drakkar.software/anchor/hooks'
 
 function InfiniteTodoList() {
   const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery(
@@ -333,7 +333,7 @@ import {
   like, ilike, is, inValues,
   contains, containedBy, overlaps, textSearch,
   match, asc, desc,
-} from 'anchor'
+} from '@drakkar.software/anchor'
 
 // Comparison
 eq('status', 'active')
@@ -373,7 +373,7 @@ match({ status: 'active', priority: 1 })
 Alternative to filter arrays:
 
 ```typescript
-import { query } from 'anchor'
+import { query } from '@drakkar.software/anchor'
 
 const result = await store.getState().fetch(
   query<Todo>()
@@ -390,7 +390,7 @@ const result = await store.getState().fetch(
 Efficient keyset pagination for large datasets:
 
 ```typescript
-import { buildCursorQuery, processCursorResults } from 'anchor'
+import { buildCursorQuery, processCursorResults } from '@drakkar.software/anchor'
 
 const { filters, sort, limit } = buildCursorQuery<Todo>({
   cursorColumn: 'created_at',
@@ -437,7 +437,7 @@ The queue supports:
 Five built-in strategies, configurable per table:
 
 ```typescript
-import { remoteWins, localWins, lastWriteWins, fieldLevelMerge } from 'anchor'
+import { remoteWins, localWins, lastWriteWins, fieldLevelMerge } from '@drakkar.software/anchor'
 
 createTableStore({
   // ...
@@ -475,7 +475,7 @@ createTableStore({
 Validate data before mutations:
 
 ```typescript
-import { zodValidator } from 'anchor'
+import { zodValidator } from '@drakkar.software/anchor'
 import { z } from 'zod'
 
 const todoSchema = z.object({
@@ -507,7 +507,7 @@ The library handles concurrent operations safely:
 Session-gated stores with automatic clear/refetch:
 
 ```typescript
-import { setupAuthGate, isRlsError } from 'anchor'
+import { setupAuthGate, isRlsError } from '@drakkar.software/anchor'
 
 const cleanup = setupAuthGate(supabase, stores.auth, [stores.todos, stores.profiles], {
   clearOnSignOut: true,    // Clear all stores when user signs out
@@ -520,7 +520,7 @@ const cleanup = setupAuthGate(supabase, stores.auth, [stores.todos, stores.profi
 Delta fetch — only get rows changed since last sync:
 
 ```typescript
-import { incrementalSync } from 'anchor'
+import { incrementalSync } from '@drakkar.software/anchor'
 
 const { fetchedCount, mergedCount } = await incrementalSync(
   supabase, 'todos', 'id', stores.todos,
@@ -533,7 +533,7 @@ const { fetchedCount, mergedCount } = await incrementalSync(
 Stale-while-revalidate pattern:
 
 ```typescript
-import { fetchWithSwr, setupAutoRevalidation, isStale } from 'anchor'
+import { fetchWithSwr, setupAutoRevalidation, isStale } from '@drakkar.software/anchor'
 
 // Serve stale data, refetch in background
 await fetchWithSwr(stores.todos, { staleTTL: 5 * 60 * 1000 })
@@ -580,7 +580,7 @@ Also available on `createSupabaseStores()` (global and per-table) and `createVie
 State changes sync across browser tabs:
 
 ```typescript
-import { setupCrossTabSync } from 'anchor'
+import { setupCrossTabSync } from '@drakkar.software/anchor'
 
 const cleanup = setupCrossTabSync(store, 'todos')
 // Uses BroadcastChannel, falls back to localStorage events
@@ -600,9 +600,9 @@ createTableStore({
 Auto-flush queue, refresh auth, and revalidate stale data when the app returns to the foreground:
 
 ```typescript
-import { setupAppLifecycle } from 'anchor'
-import { WebAppLifecycle } from 'anchor-adapter-web'
-// or: import { RNAppLifecycle } from 'anchor-adapter-react-native'
+import { setupAppLifecycle } from '@drakkar.software/anchor'
+import { WebAppLifecycle } from '@drakkar.software/anchor-adapter-web'
+// or: import { RNAppLifecycle } from '@drakkar.software/anchor-adapter-react-native'
 
 const cleanup = setupAppLifecycle({
   adapter: new WebAppLifecycle(),
@@ -620,7 +620,7 @@ const cleanup = setupAppLifecycle({
 Or use the React hook:
 
 ```tsx
-import { useAppLifecycle } from 'anchor'
+import { useAppLifecycle } from '@drakkar.software/anchor'
 
 useAppLifecycle({
   adapter: new WebAppLifecycle(),
@@ -634,8 +634,8 @@ useAppLifecycle({
 Flush the offline queue in the background on mobile:
 
 ```typescript
-import { setupBackgroundSync } from 'anchor'
-import { RNBackgroundSync } from 'anchor-adapter-react-native'
+import { setupBackgroundSync } from '@drakkar.software/anchor'
+import { RNBackgroundSync } from '@drakkar.software/anchor-adapter-react-native'
 
 const cleanup = await setupBackgroundSync(offlineQueue, new RNBackgroundSync())
 // Cleanup: await cleanup()
@@ -646,7 +646,7 @@ const cleanup = await setupBackgroundSync(offlineQueue, new RNBackgroundSync())
 Sync state across devices via Supabase Realtime broadcast:
 
 ```typescript
-import { setupMultiDeviceSync } from 'anchor'
+import { setupMultiDeviceSync } from '@drakkar.software/anchor'
 
 const cleanup = setupMultiDeviceSync(supabase, {
   todos: stores.todos,
@@ -662,7 +662,7 @@ const cleanup = setupMultiDeviceSync(supabase, {
 Sync only relevant subsets of data:
 
 ```typescript
-import { selectiveSync, syncAllByPriority } from 'anchor'
+import { selectiveSync, syncAllByPriority } from '@drakkar.software/anchor'
 
 // Sync only active todos
 await selectiveSync(supabase, 'todos', 'id', stores.todos, {
@@ -682,8 +682,8 @@ await syncAllByPriority([
 Transparently encrypt persisted data:
 
 ```typescript
-import { EncryptedAdapter, createWebCryptoEncryption } from 'anchor'
-import { LocalStorageAdapter } from 'anchor-adapter-web'
+import { EncryptedAdapter, createWebCryptoEncryption } from '@drakkar.software/anchor'
+import { LocalStorageAdapter } from '@drakkar.software/anchor-adapter-web'
 
 const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
 const adapter = new EncryptedAdapter(new LocalStorageAdapter(), createWebCryptoEncryption(key))
@@ -696,7 +696,7 @@ createSupabaseStores({ persistence: { adapter } })
 Monitor and manage storage usage:
 
 ```typescript
-import { StorageQuotaManager } from 'anchor'
+import { StorageQuotaManager } from '@drakkar.software/anchor'
 
 const quota = new StorageQuotaManager()
 const { count, estimatedBytes } = await quota.getUsage(adapter)
@@ -710,7 +710,7 @@ await quota.enforceLimit(adapter, 'todos')
 Automatic cache invalidation on schema changes:
 
 ```typescript
-import { checkSchemaVersion } from 'anchor'
+import { checkSchemaVersion } from '@drakkar.software/anchor'
 
 const { versionChanged } = await checkSchemaVersion(adapter, 2)
 // If version changed, all cached data is cleared and fetch() repopulates from Supabase
@@ -721,7 +721,7 @@ const { versionChanged } = await checkSchemaVersion(adapter, 2)
 Monitor sync status across stores:
 
 ```tsx
-import { useSyncStatus, useQueueStatus, usePendingChanges } from 'anchor'
+import { useSyncStatus, useQueueStatus, usePendingChanges } from '@drakkar.software/anchor'
 
 function SyncBar() {
   const { status, pendingCount } = useSyncStatus([stores.todos, stores.profiles])
@@ -742,7 +742,7 @@ function QueueInfo() {
 Track sync health for monitoring:
 
 ```typescript
-import { SyncMetrics } from 'anchor'
+import { SyncMetrics } from '@drakkar.software/anchor'
 
 const metrics = new SyncMetrics()
 createSupabaseStores({ logger: metrics })
@@ -756,7 +756,7 @@ const snap = metrics.getMetrics()
 Log and react to conflict resolutions:
 
 ```typescript
-import { ConflictAuditLog } from 'anchor'
+import { ConflictAuditLog } from '@drakkar.software/anchor'
 
 const auditLog = new ConflictAuditLog()
 auditLog.onConflict((entry) => {
@@ -771,7 +771,7 @@ const log = auditLog.getLog({ table: 'todos', since: Date.now() - 60000 })
 Wrap any async operation with exponential backoff and jitter:
 
 ```typescript
-import { withRetry } from 'anchor'
+import { withRetry } from '@drakkar.software/anchor'
 
 const result = await withRetry(() => createRpcAction(supabase, 'heavy_query')(), {
   maxRetries: 3,
@@ -784,7 +784,7 @@ const result = await withRetry(() => createRpcAction(supabase, 'heavy_query')(),
 Protect against cascading failures from repeatedly calling failing endpoints:
 
 ```typescript
-import { CircuitBreaker } from 'anchor'
+import { CircuitBreaker } from '@drakkar.software/anchor'
 
 const breaker = new CircuitBreaker({ failureThreshold: 5, resetTimeout: 30000 })
 
@@ -798,7 +798,7 @@ const result = await breaker.execute(() => fetch('/api/unstable'))
 Throttle requests using a token bucket algorithm:
 
 ```typescript
-import { RateLimiter } from 'anchor'
+import { RateLimiter } from '@drakkar.software/anchor'
 
 const limiter = new RateLimiter({ maxTokens: 10, refillRate: 2 }) // 10 burst, 2/sec refill
 
@@ -812,7 +812,7 @@ if (limiter.tryConsume()) {
 Client-side and server-side aggregation:
 
 ```typescript
-import { aggregateLocal, aggregateRpc } from 'anchor'
+import { aggregateLocal, aggregateRpc } from '@drakkar.software/anchor'
 
 // Client-side (on store data)
 const stats = aggregateLocal(stores.todos, {
@@ -830,7 +830,7 @@ const serverStats = await aggregateRpc(supabase, 'aggregate_todos', { user_id: '
 Full Supabase Storage support:
 
 ```typescript
-import { createStorageActions } from 'anchor'
+import { createStorageActions } from '@drakkar.software/anchor'
 
 const avatars = createStorageActions(supabase, 'avatars')
 
@@ -844,7 +844,7 @@ await avatars.remove(['old-file.png'])
 ### Edge Functions
 
 ```typescript
-import { createEdgeFunctionAction } from 'anchor'
+import { createEdgeFunctionAction } from '@drakkar.software/anchor'
 
 const sendEmail = createEdgeFunctionAction<{ success: boolean }>(supabase, 'send-email')
 const result = await sendEmail({ body: { to: 'user@example.com', subject: 'Hello' } })
@@ -853,7 +853,7 @@ const result = await sendEmail({ body: { to: 'user@example.com', subject: 'Hello
 ### RPC (Postgres Functions)
 
 ```typescript
-import { createRpcAction } from 'anchor'
+import { createRpcAction } from '@drakkar.software/anchor'
 
 const getStats = createRpcAction<DashboardStats>(supabase, 'get_dashboard_stats')
 const { data, error } = await getStats({ user_id: '123' })
@@ -865,7 +865,7 @@ Server-side prefetch for React Server Components:
 
 ```tsx
 // app/todos/page.tsx (Server Component)
-import { prefetch } from 'anchor'
+import { prefetch } from '@drakkar.software/anchor'
 
 export default async function TodosPage() {
   const { data } = await prefetch<Todo>(supabase, 'todos', {
@@ -885,7 +885,7 @@ export default async function TodosPage() {
 import {
   LocalStorageAdapter, IndexedDBAdapter,
   WebNetworkStatus, WebAppLifecycle,
-} from 'anchor-adapter-web'
+} from '@drakkar.software/anchor-adapter-web'
 
 new LocalStorageAdapter()   // Small datasets (<5MB)
 new IndexedDBAdapter()      // Large datasets
@@ -900,7 +900,7 @@ import {
   ExpoSqliteAdapter, AsyncStorageAdapter,
   RNNetworkStatus, RNAppLifecycle,
   RNBackgroundSync, createExpoOAuthHandler,
-} from 'anchor-adapter-react-native'
+} from '@drakkar.software/anchor-adapter-react-native'
 
 new ExpoSqliteAdapter()     // Structured (recommended)
 new AsyncStorageAdapter()   // Simple fallback
@@ -938,38 +938,38 @@ createTableStore({
 
 | Package | Description |
 |---------|-------------|
-| `anchor` | Core library |
-| `anchor-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus, WebAppLifecycle |
-| `anchor-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo, AppLifecycle, BackgroundSync, OAuth |
+| `@drakkar.software/anchor` | Core library |
+| `@drakkar.software/anchor-adapter-web` | Web: localStorage, IndexedDB, WebNetworkStatus, WebAppLifecycle |
+| `@drakkar.software/anchor-adapter-react-native` | React Native: expo-sqlite, AsyncStorage, NetInfo, AppLifecycle, BackgroundSync, OAuth |
 
 ## Tree-Shakeable Imports
 
 ```typescript
 // Full API
-import { createTableStore, useQuery, eq } from 'anchor'
+import { createTableStore, useQuery, eq } from '@drakkar.software/anchor'
 
 // Hooks only
-import { useQuery, useMutation, useSyncStatus } from 'anchor/hooks'
+import { useQuery, useMutation, useSyncStatus } from '@drakkar.software/anchor/hooks'
 
 // Query builder only
-import { query, QueryBuilder } from 'anchor/query/queryBuilder'
+import { query, QueryBuilder } from '@drakkar.software/anchor/query/queryBuilder'
 
 // Server-only (no React dependency)
-import { prefetch } from 'anchor/server/prefetch'
+import { prefetch } from '@drakkar.software/anchor/server/prefetch'
 
 // Storage only
-import { createStorageActions } from 'anchor/storage/storageActions'
+import { createStorageActions } from '@drakkar.software/anchor/storage/storageActions'
 
 // New entry points
-import { setupAppLifecycle } from 'anchor/lifecycle'
-import { setupBackgroundSync } from 'anchor/sync/background'
-import { selectiveSync } from 'anchor/sync/selective'
-import { setupMultiDeviceSync } from 'anchor/sync/multiDevice'
-import { SyncMetrics } from 'anchor/sync/metrics'
-import { EncryptedAdapter } from 'anchor/persistence/encrypted'
-import { StorageQuotaManager } from 'anchor/persistence/quota'
-import { checkSchemaVersion } from 'anchor/persistence/schemaVersion'
-import { ConflictAuditLog } from 'anchor/mutation/audit'
+import { setupAppLifecycle } from '@drakkar.software/anchor/lifecycle'
+import { setupBackgroundSync } from '@drakkar.software/anchor/sync/background'
+import { selectiveSync } from '@drakkar.software/anchor/sync/selective'
+import { setupMultiDeviceSync } from '@drakkar.software/anchor/sync/multiDevice'
+import { SyncMetrics } from '@drakkar.software/anchor/sync/metrics'
+import { EncryptedAdapter } from '@drakkar.software/anchor/persistence/encrypted'
+import { StorageQuotaManager } from '@drakkar.software/anchor/persistence/quota'
+import { checkSchemaVersion } from '@drakkar.software/anchor/persistence/schemaVersion'
+import { ConflictAuditLog } from '@drakkar.software/anchor/mutation/audit'
 ```
 
 ## Requirements

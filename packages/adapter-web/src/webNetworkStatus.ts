@@ -1,4 +1,4 @@
-import type { NetworkStatusAdapter } from "anchor"
+import type { NetworkStatusAdapter } from "@drakkar.software/anchor"
 
 /**
  * Web network status adapter using navigator.onLine and online/offline events.

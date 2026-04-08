@@ -1,4 +1,4 @@
-import type { PersistenceAdapter } from "anchor/persistence"
+import type { PersistenceAdapter } from "@drakkar.software/anchor/persistence"
 
 /**
  * Web localStorage adapter. Good for small datasets (<5MB).
