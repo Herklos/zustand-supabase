@@ -292,6 +292,75 @@ describe("OfflineQueue", () => {
     })
   })
 
+  describe("clearQueue", () => {
+    it("clears all mutations and persisted state", async () => {
+      const adapter = new MemoryAdapter()
+      const queue = new OfflineQueue({ adapter })
+      await queue.enqueue(createMutation({ id: "m1" }))
+      await queue.enqueue(createMutation({ id: "m2" }))
+
+      expect(queue.pendingCount).toBe(2)
+
+      await queue.clearQueue()
+
+      expect(queue.pendingCount).toBe(0)
+      // Verify persistence was also cleared
+      const persisted = await adapter.getItem<any[]>("zs:__mutation_queue")
+      expect(persisted).toEqual([])
+    })
+  })
+
+  describe("user isolation", () => {
+    it("tags enqueued mutations with current userId", async () => {
+      const queue = new OfflineQueue()
+      queue.setUserId("user-A")
+      const executor = vi.fn().mockResolvedValue({})
+      queue.registerExecutor("todos", executor)
+
+      const mutation = createMutation({ id: "m1" })
+      await queue.enqueue(mutation)
+
+      expect(mutation.userId).toBe("user-A")
+    })
+
+    it("skips mutations from a different user on flush", async () => {
+      const queue = new OfflineQueue()
+      const executor = vi.fn().mockResolvedValue({})
+      queue.registerExecutor("todos", executor)
+
+      // Enqueue as user-A
+      queue.setUserId("user-A")
+      await queue.enqueue(createMutation({ id: "m1" }))
+
+      // Switch to user-B
+      queue.setUserId("user-B")
+      const result = await queue.flush()
+
+      // user-A's mutation should be skipped
+      expect(executor).not.toHaveBeenCalled()
+      expect(result.succeeded).toHaveLength(0)
+      // mutation still pending
+      expect(queue.pendingCount).toBe(1)
+    })
+
+    it("flushes untagged mutations regardless of current user", async () => {
+      const queue = new OfflineQueue()
+      const executor = vi.fn().mockResolvedValue({})
+      queue.registerExecutor("todos", executor)
+
+      // Enqueue without userId
+      await queue.enqueue(createMutation({ id: "m1" }))
+
+      // Set user context
+      queue.setUserId("user-A")
+      const result = await queue.flush()
+
+      // Untagged mutation should flush for any user
+      expect(executor).toHaveBeenCalledTimes(1)
+      expect(result.succeeded).toHaveLength(1)
+    })
+  })
+
   describe("auto-flush on reconnect", () => {
     it("schedules flush when coming online", async () => {
       const network = new ManualNetworkStatus()

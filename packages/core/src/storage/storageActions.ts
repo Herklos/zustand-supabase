@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { withRetry, type RetryOptions } from "../utils/retry.js"
 
 export type StorageResult<T> = {
   data: T | null
@@ -9,6 +10,8 @@ export type UploadOptions = {
   cacheControl?: string
   contentType?: string
   upsert?: boolean
+  /** Retry configuration for transient failures */
+  retry?: RetryOptions
 }
 
 export type ListOptions = {
@@ -33,7 +36,7 @@ export async function uploadFile(
   file: File | Blob | ArrayBuffer | string,
   options?: UploadOptions,
 ): Promise<StorageResult<{ path: string }>> {
-  try {
+  const execute = async (): Promise<StorageResult<{ path: string }>> => {
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(path, file, {
@@ -41,8 +44,15 @@ export async function uploadFile(
         contentType: options?.contentType,
         upsert: options?.upsert,
       })
-    if (error) return { data: null, error: new Error(error.message) }
+    if (error) throw new Error(error.message)
     return { data: { path: data.path }, error: null }
+  }
+
+  try {
+    if (options?.retry) {
+      return await withRetry(execute, options.retry)
+    }
+    return await execute()
   } catch (err) {
     return { data: null, error: err instanceof Error ? err : new Error(String(err)) }
   }

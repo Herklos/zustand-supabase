@@ -80,6 +80,8 @@ export {
 export { QueryBuilder, query } from "./query/queryBuilder.js"
 export { buildCursorQuery, processCursorResults } from "./query/pagination.js"
 export type { CursorPaginationOptions, PaginationState } from "./query/pagination.js"
+export { aggregateRpc, aggregateLocal } from "./query/aggregation.js"
+export type { AggregateFunction, AggregateResult } from "./query/aggregation.js"
 
 // ─── Mutation ────────────────────────────────────────────────────────
 export { OfflineQueue } from "./mutation/offlineQueue.js"
@@ -117,8 +119,8 @@ export { createViewStore } from "./createViewStore.js"
 export type { ViewStore, CreateViewStoreOptions } from "./createViewStore.js"
 
 // ─── RPC ─────────────────────────────────────────────────────────────
-export { callRpc, createRpcAction } from "./rpc/rpcAction.js"
-export type { RpcResult } from "./rpc/rpcAction.js"
+export { callRpc, createRpcAction, invalidateRpcCache } from "./rpc/rpcAction.js"
+export type { RpcResult, RpcCallOptions, RpcCacheOptions } from "./rpc/rpcAction.js"
 
 // ─── Edge Functions ──────────────────────────────────────────────────
 export { invokeEdgeFunction, createEdgeFunctionAction } from "./functions/edgeFunctions.js"
@@ -165,6 +167,18 @@ export type { CacheConfig } from "./cache/cacheTtl.js"
 // ─── Composite Keys ─────────────────────────────────────────────────
 export { encodeKey, buildPkFilter, applyPkFilters, normalizePk } from "./utils/compositeKey.js"
 
+// ─── Retry ──────────────────────────────────────────────────────────
+export { withRetry } from "./utils/retry.js"
+export type { RetryOptions } from "./utils/retry.js"
+
+// ─── Circuit Breaker ────────────────────────────────────────────────
+export { CircuitBreaker, CircuitOpenError } from "./utils/circuitBreaker.js"
+export type { CircuitBreakerState, CircuitBreakerOptions } from "./utils/circuitBreaker.js"
+
+// ─── Rate Limiter ───────────────────────────────────────────────────
+export { RateLimiter } from "./utils/rateLimiter.js"
+export type { RateLimiterOptions } from "./utils/rateLimiter.js"
+
 // ─── Hooks ───────────────────────────────────────────────────────────
 export { createTableHook, useRecords, useRecord } from "./hooks/useTableStore.js"
 export { useQuery } from "./hooks/useQuery.js"
@@ -188,6 +202,8 @@ export { useStorageQuota } from "./hooks/useStorageQuota.js"
 export type { UseStorageQuotaResult } from "./hooks/useStorageQuota.js"
 export { useLinkedQuery } from "./hooks/useLinkedQuery.js"
 export type { UseLinkedQueryResult } from "./hooks/useLinkedQuery.js"
+export { useInfiniteQuery } from "./hooks/useInfiniteQuery.js"
+export type { UseInfiniteQueryOptions, UseInfiniteQueryResult } from "./hooks/useInfiniteQuery.js"
 
 // ─── Server ──────────────────────────────────────────────────────────
 export { prefetch, serializePrefetchResult, deserializePrefetchResult } from "./server/prefetch.js"

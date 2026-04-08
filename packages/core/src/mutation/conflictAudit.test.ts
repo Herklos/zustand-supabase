@@ -255,6 +255,46 @@ describe("ConflictAuditLog", () => {
     expect(log[0].resolvedValue).toEqual({ id: 1, title: "remote title" })
   })
 
+  it("records userId when provided", () => {
+    auditLog.record({
+      table: "todos",
+      rowId: 1,
+      strategy: "server-wins",
+      localValue: { id: 1 },
+      remoteValue: { id: 1 },
+      resolvedValue: { id: 1 },
+      userId: "user-A",
+    })
+
+    const log = auditLog.getLog()
+    expect(log[0].userId).toBe("user-A")
+  })
+
+  it("getLog({ userId }) filters by user", () => {
+    auditLog.record({
+      table: "todos",
+      rowId: 1,
+      strategy: "server-wins",
+      localValue: {},
+      remoteValue: {},
+      resolvedValue: {},
+      userId: "user-A",
+    })
+    auditLog.record({
+      table: "todos",
+      rowId: 2,
+      strategy: "server-wins",
+      localValue: {},
+      remoteValue: {},
+      resolvedValue: {},
+      userId: "user-B",
+    })
+
+    const userALog = auditLog.getLog({ userId: "user-A" })
+    expect(userALog).toHaveLength(1)
+    expect(userALog[0].rowId).toBe(1)
+  })
+
   it("integration: resolveConflict without auditLog does not throw", () => {
     type Row = { id: number; title: string }
 

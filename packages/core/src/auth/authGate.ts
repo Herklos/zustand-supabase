@@ -1,6 +1,8 @@
 import type { StoreApi } from "zustand"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { TableStore, AuthStore } from "../types.js"
+import type { RealtimeManager } from "../realtime/realtimeManager.js"
+import type { OfflineQueue } from "../mutation/offlineQueue.js"
 
 export type AuthGateOptions = {
   /** Clear all table stores on sign-out */
@@ -9,6 +11,10 @@ export type AuthGateOptions = {
   refetchOnSignIn?: boolean
   /** Custom callback when auth state changes */
   onAuthChange?: (event: string, session: unknown) => void
+  /** RealtimeManager to unsubscribe on sign-out */
+  realtimeManager?: RealtimeManager
+  /** OfflineQueue to clear on sign-out */
+  offlineQueue?: OfflineQueue
 }
 
 /**
@@ -40,6 +46,8 @@ export function setupAuthGate(
     clearOnSignOut = true,
     refetchOnSignIn = true,
     onAuthChange,
+    realtimeManager,
+    offlineQueue,
   } = options
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -50,6 +58,12 @@ export function setupAuthGate(
         for (const store of tableStores) {
           store.getState().clearAll()
         }
+        // Unsubscribe all realtime channels to prevent data leaks after sign-out
+        realtimeManager?.destroy()
+        // Clear offline queue to prevent orphaned mutations executing under wrong user
+        offlineQueue?.clearQueue().catch(() => {
+          // Best-effort: persistence may already be cleared
+        })
       }
 
       if (event === "SIGNED_IN" && refetchOnSignIn) {
