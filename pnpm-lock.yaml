@@ -32,6 +32,9 @@ importers:
         specifier: '>=0.70.0'
         version: 0.84.1(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
+      '@drakkar.software/anchor':
+        specifier: workspace:*
+        version: link:../core
       '@supabase/supabase-js':
         specifier: ^2.49.0
         version: 2.102.1
@@ -44,21 +47,18 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
-      zustand-supabase:
-        specifier: workspace:*
-        version: link:../core
 
   packages/adapter-web:
     devDependencies:
+      '@drakkar.software/anchor':
+        specifier: workspace:*
+        version: link:../core
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.3)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
-      zustand-supabase:
-        specifier: workspace:*
-        version: link:../core
 
   packages/core:
     devDependencies:
