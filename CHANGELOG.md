@@ -1,5 +1,43 @@
 # Changelog
 
+## [Unreleased]
+
+### Query Cache Strategy
+
+- **Configurable `cacheStrategy` option**: Controls how `fetch()` handles existing records — `"replace"` (default, existing behavior) replaces all records on each fetch; `"merge"` accumulates records across fetches while `order` reflects only the latest query results
+- **Store-level and per-fetch configuration**: Set `cacheStrategy` on `CreateTableStoreOptions` for a store-wide default, or override per call via `FetchOptions.cacheStrategy`
+- **`clearAndFetch()` action**: Atomically clears accumulated cache and re-fetches with forced replace strategy — the "invalidate" escape hatch for merge-mode stores
+- **`CacheStrategy` type export**: Available from the main package entry point
+- **`ViewStore` support**: `clearAndFetch` and `cacheStrategy` available on view stores
+
+### CI & Build Fixes
+
+- **Fix adapter-react-native DTS build**: Add `@types/node` dev dependency and `"types": ["node"]` to tsconfig for DTS generation
+- **Fix CI pnpm version conflict**: Remove explicit `version: 10` from `pnpm/action-setup` in workflow — reads from `packageManager` field in `package.json` instead
+
+## [1.1.3] - 2026-04-08
+
+### Security
+
+- **Auth gate cleanup on sign-out**: Auth gate now clears realtime channels and offline queue when user signs out, preventing cross-user data leaks
+- **User-attributed offline queue**: Offline queue supports `userId` attribution to prevent cross-user mutation leaks after sign-out/sign-in
+
+### Features
+
+- **`withRetry()` utility**: Exponential backoff with jitter for RPC, Edge Functions, and Storage operations
+- **JWT custom claims**: Auth store exposes `getClaim()` helper for parsing custom JWT claims
+- **RPC result caching**: TTL-based cache with in-flight request deduplication for RPC calls
+- **`useInfiniteQuery()` hook**: Cursor-based infinite scroll with load-more support
+- **Conflict audit `userId`**: Conflict audit log supports user attribution and filtering
+
+### Utilities
+
+- **`CircuitBreaker`**: Closed/open/half-open state machine for failing endpoints
+- **`RateLimiter`**: Token bucket algorithm for request throttling
+- **`RealtimeManager.pause()`**: Manual subscription pausing
+- **`aggregateLocal()`**: Client-side sum/avg/min/max/count on store data
+- **`aggregateRpc()`**: Server-side aggregation via Postgres functions
+
 ## [1.1.2] - 2026-04-07
 
 ### Linked Queries
