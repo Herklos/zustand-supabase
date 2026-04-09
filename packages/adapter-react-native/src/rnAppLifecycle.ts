@@ -1,22 +1,29 @@
 import type { AppLifecycleAdapter } from "@drakkar.software/anchor"
 
+type AppStateModule = {
+  currentState: string
+  addEventListener: (
+    event: string,
+    handler: (state: string) => void,
+  ) => { remove: () => void }
+}
+
 /**
  * React Native implementation of AppLifecycleAdapter using AppState.
  * Maps AppState "active" to foreground, "background"/"inactive" to background.
+ *
+ * Pass AppState from react-native to avoid bundler resolution issues
+ * in pnpm virtual store environments.
+ *
+ * @example
+ * import { AppState } from 'react-native'
+ * new RNAppLifecycle(AppState)
  */
 export class RNAppLifecycle implements AppLifecycleAdapter {
-  private AppState: any
+  private AppState: AppStateModule
 
-  constructor() {
-    try {
-      // Dynamic require to avoid bundling issues when not installed
-      const rn = require("react-native")
-      this.AppState = rn.AppState
-    } catch {
-      throw new Error(
-        "RNAppLifecycle requires react-native. Install it with: npm install react-native",
-      )
-    }
+  constructor(AppState: AppStateModule) {
+    this.AppState = AppState
   }
 
   onForeground(cb: () => void): () => void {

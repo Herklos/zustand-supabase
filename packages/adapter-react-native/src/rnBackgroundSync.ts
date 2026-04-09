@@ -1,28 +1,35 @@
 import type { BackgroundTaskAdapter } from "@drakkar.software/anchor"
 
+type TaskManagerModule = {
+  defineTask: (name: string, handler: () => Promise<any>) => void
+  isTaskRegisteredAsync: (name: string) => Promise<boolean>
+}
+
+type BackgroundFetchModule = {
+  registerTaskAsync: (name: string, options: object) => Promise<void>
+  unregisterTaskAsync: (name: string) => Promise<void>
+  BackgroundFetchResult: { NewData: unknown; Failed: unknown }
+}
+
 /**
  * React Native implementation of BackgroundTaskAdapter using
  * expo-task-manager and expo-background-fetch.
+ *
+ * Pass both modules to avoid bundler resolution issues in pnpm
+ * virtual store environments.
+ *
+ * @example
+ * import * as TaskManager from 'expo-task-manager'
+ * import * as BackgroundFetch from 'expo-background-fetch'
+ * new RNBackgroundSync(TaskManager, BackgroundFetch)
  */
 export class RNBackgroundSync implements BackgroundTaskAdapter {
-  private TaskManager: any
-  private BackgroundFetch: any
+  private TaskManager: TaskManagerModule
+  private BackgroundFetch: BackgroundFetchModule
 
-  constructor() {
-    try {
-      this.TaskManager = require("expo-task-manager")
-    } catch {
-      throw new Error(
-        "RNBackgroundSync requires expo-task-manager. Install it with: npx expo install expo-task-manager",
-      )
-    }
-    try {
-      this.BackgroundFetch = require("expo-background-fetch")
-    } catch {
-      throw new Error(
-        "RNBackgroundSync requires expo-background-fetch. Install it with: npx expo install expo-background-fetch",
-      )
-    }
+  constructor(TaskManager: TaskManagerModule, BackgroundFetch: BackgroundFetchModule) {
+    this.TaskManager = TaskManager
+    this.BackgroundFetch = BackgroundFetch
   }
 
   async register(taskName: string, handler: () => Promise<void>): Promise<void> {

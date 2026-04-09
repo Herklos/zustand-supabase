@@ -16,23 +16,27 @@ export type ExpoOAuthHandler = {
   getRedirectUrl(): string
 }
 
+type LinkingModule = {
+  createURL: (path: string) => string
+  parse: (url: string) => { queryParams?: Record<string, string | undefined> }
+}
+
 /**
  * Create an OAuth handler for Expo/React Native apps.
  * Uses expo-linking to construct deep link URLs for OAuth callbacks.
+ *
+ * Pass the expo-linking module to avoid bundler resolution issues in
+ * pnpm virtual store environments.
+ *
+ * @example
+ * import * as Linking from 'expo-linking'
+ * createExpoOAuthHandler(supabase, Linking)
  */
 export function createExpoOAuthHandler(
   supabase: SupabaseClient,
+  Linking: LinkingModule,
   options?: ExpoOAuthOptions,
 ): ExpoOAuthHandler {
-  let Linking: any
-  try {
-    Linking = require("expo-linking")
-  } catch {
-    throw new Error(
-      "createExpoOAuthHandler requires expo-linking. Install it with: npx expo install expo-linking",
-    )
-  }
-
   const redirectPath = options?.redirectPath ?? "auth/callback"
   const redirectUrl = options?.redirectScheme
     ? `${options.redirectScheme}://${redirectPath}`

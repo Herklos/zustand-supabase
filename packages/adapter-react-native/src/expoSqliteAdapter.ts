@@ -1,28 +1,28 @@
 import type { PersistenceAdapter } from "@drakkar.software/anchor/persistence"
 
+type SQLiteModule = {
+  openDatabaseSync: (name: string) => any
+}
+
 /**
  * React Native persistence adapter using expo-sqlite.
  * Stores data as JSON in a key-value table.
  *
- * Requires `expo-sqlite` as a peer dependency.
+ * Pass the expo-sqlite module as the first argument to avoid bundler
+ * resolution issues in pnpm virtual store environments.
+ *
+ * @example
+ * import * as SQLite from 'expo-sqlite'
+ * new ExpoSqliteAdapter(SQLite, 'anchor-kv')
  */
 export class ExpoSqliteAdapter implements PersistenceAdapter {
   private db: any // SQLiteDatabase
 
-  constructor(dbName = "anchor") {
-    // Dynamic import to avoid bundling expo-sqlite in web builds
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const SQLite = require("expo-sqlite")
-      this.db = SQLite.openDatabaseSync(dbName)
-      this.db.execSync(
-        "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)",
-      )
-    } catch {
-      throw new Error(
-        "expo-sqlite is required for ExpoSqliteAdapter. Install with: npx expo install expo-sqlite",
-      )
-    }
+  constructor(SQLite: SQLiteModule, dbName = "anchor") {
+    this.db = SQLite.openDatabaseSync(dbName)
+    this.db.execSync(
+      "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)",
+    )
   }
 
   async getItem<T>(key: string): Promise<T | null> {

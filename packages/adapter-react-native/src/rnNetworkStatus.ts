@@ -1,23 +1,27 @@
 import type { NetworkStatusAdapter } from "@drakkar.software/anchor"
 
+type NetInfoModule = {
+  addEventListener: (
+    cb: (state: { isConnected: boolean | null }) => void,
+  ) => () => void
+}
+
 /**
  * React Native network status adapter using @react-native-community/netinfo.
  *
- * Requires `@react-native-community/netinfo` as a peer dependency.
+ * Pass the NetInfo default export as the argument to avoid bundler
+ * resolution issues in pnpm virtual store environments.
+ *
+ * @example
+ * import NetInfo from '@react-native-community/netinfo'
+ * new RNNetworkStatus(NetInfo)
  */
 export class RNNetworkStatus implements NetworkStatusAdapter {
   private _isOnline = true
-  private netInfo: any
+  private netInfo: NetInfoModule
 
-  constructor() {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.netInfo = require("@react-native-community/netinfo").default
-    } catch {
-      throw new Error(
-        "@react-native-community/netinfo is required. Install with: npx expo install @react-native-community/netinfo",
-      )
-    }
+  constructor(NetInfo: NetInfoModule) {
+    this.netInfo = NetInfo
   }
 
   isOnline(): boolean {

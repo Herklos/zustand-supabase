@@ -1,24 +1,30 @@
 import type { PersistenceAdapter } from "@drakkar.software/anchor/persistence"
 
+type AsyncStorageModule = {
+  getItem: (key: string) => Promise<string | null>
+  setItem: (key: string, value: string) => Promise<void>
+  removeItem: (key: string) => Promise<void>
+  getAllKeys: () => Promise<readonly string[]>
+  multiSet: (pairs: [string, string][]) => Promise<void>
+  multiRemove: (keys: string[]) => Promise<void>
+}
+
 /**
  * React Native persistence adapter using @react-native-async-storage/async-storage.
  * Simple key-value storage, good for smaller datasets.
  *
- * Requires `@react-native-async-storage/async-storage` as a peer dependency.
+ * Pass the AsyncStorage default export as the argument to avoid bundler
+ * resolution issues in pnpm virtual store environments.
+ *
+ * @example
+ * import AsyncStorage from '@react-native-async-storage/async-storage'
+ * new AsyncStorageAdapter(AsyncStorage)
  */
 export class AsyncStorageAdapter implements PersistenceAdapter {
-  private storage: any // AsyncStorageStatic
+  private storage: AsyncStorageModule
 
-  constructor() {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.storage =
-        require("@react-native-async-storage/async-storage").default
-    } catch {
-      throw new Error(
-        "@react-native-async-storage/async-storage is required. Install with: npx expo install @react-native-async-storage/async-storage",
-      )
-    }
+  constructor(AsyncStorage: AsyncStorageModule) {
+    this.storage = AsyncStorage
   }
 
   async getItem<T>(key: string): Promise<T | null> {
@@ -48,8 +54,8 @@ export class AsyncStorageAdapter implements PersistenceAdapter {
   }
 
   async keys(prefix?: string): Promise<string[]> {
-    const allKeys: string[] = await this.storage.getAllKeys()
-    if (!prefix) return allKeys
+    const allKeys = await this.storage.getAllKeys()
+    if (!prefix) return [...allKeys]
     return allKeys.filter((k: string) => k.startsWith(prefix))
   }
 
