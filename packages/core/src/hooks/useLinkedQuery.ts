@@ -92,6 +92,8 @@ export function useLinkedQuery<T>(
   const generationRef = useRef(0)
   const mergeToStoreRef = useRef(mergeToStore)
   mergeToStoreRef.current = mergeToStore
+  // Flag to suppress store subscription during own mergeToStore writes
+  const isMergingRef = useRef(false)
 
   // Track store mutation version — increments when any linked store's records change
   const [storeVersion, setStoreVersion] = useState(0)
@@ -106,7 +108,10 @@ export function useLinkedQuery<T>(
       store.subscribe((state) => {
         if (state.records !== prevRecords[i]) {
           prevRecords[i] = state.records
-          setStoreVersion((v) => v + 1)
+          // Skip version bump when this hook's own mergeToStore caused the change
+          if (!isMergingRef.current) {
+            setStoreVersion((v) => v + 1)
+          }
         }
       }),
     )
@@ -124,7 +129,9 @@ export function useLinkedQuery<T>(
       if (gen === generationRef.current) {
         setData(result)
         if (mergeToStoreRef.current && Array.isArray(result)) {
+          isMergingRef.current = true
           mergeToStoreRef.current.getState().mergeRecords(result)
+          isMergingRef.current = false
         }
       }
     } catch (err) {

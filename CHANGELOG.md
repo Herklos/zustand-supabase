@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.1] - 2026-04-09
+
+### Bug Fixes
+
+- **Fix `mergeToStore` infinite refetch loop**: `useLinkedQuery` now suppresses its own store subscription during `mergeToStore` writes — prevents the hook from detecting its own write as an external mutation and re-fetching in an infinite loop
+
 ## [1.3.0] - 2026-04-09
 
 ### Linked Query Enhancements

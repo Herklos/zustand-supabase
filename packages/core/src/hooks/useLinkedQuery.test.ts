@@ -243,6 +243,46 @@ describe("useLinkedQuery - store subscription pattern", () => {
     expect(mergeRecords).not.toHaveBeenCalled()
   })
 
+  // ─── mergeToStore + store subscription loop prevention ─────────────────
+
+  it("isMerging flag prevents store subscription from firing during own mergeToStore write", () => {
+    const store = createMockTableStore(
+      new Map([["1", { id: "1", name: "Alice" }]]),
+    )
+
+    let isMerging = false
+    let storeVersion = 0
+
+    const prevRecords = [store.getState().records]
+
+    store.subscribe((state) => {
+      if (state.records !== prevRecords[0]) {
+        prevRecords[0] = state.records
+        // Same guard as useLinkedQuery: skip bump when merging
+        if (!isMerging) {
+          storeVersion++
+        }
+      }
+    })
+
+    // Simulate mergeToStore write (guarded)
+    isMerging = true
+    const next = new Map(store.getState().records)
+    next.set("2", { id: "2", name: "Bob" })
+    store.setState({ records: next })
+    isMerging = false
+
+    // storeVersion should NOT have incremented
+    expect(storeVersion).toBe(0)
+
+    // External mutation (not guarded) SHOULD increment
+    const next2 = new Map(store.getState().records)
+    next2.set("3", { id: "3", name: "Charlie" })
+    store.setState({ records: next2 })
+
+    expect(storeVersion).toBe(1)
+  })
+
   it("generation counter pattern discards stale results", async () => {
     let generationRef = 0
     const results: string[] = []
