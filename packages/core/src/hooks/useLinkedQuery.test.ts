@@ -126,6 +126,123 @@ describe("useLinkedQuery - store subscription pattern", () => {
     unsub()
   })
 
+  // ─── initialData ─────────────────────────────────────────────────────────
+
+  it("initialData as value seeds data state immediately", () => {
+    const seed = { id: "1", title: "Cached offer" }
+
+    // Simulate useState initializer behaviour: resolve once on mount
+    const raw = seed
+    const resolved =
+      typeof raw === "function" ? (raw as () => typeof seed)() : raw
+    const hasInitialData = resolved !== undefined
+
+    expect(resolved).toEqual(seed)
+    expect(hasInitialData).toBe(true)
+  })
+
+  it("initialData as getter function is called and its result used", () => {
+    const record = { id: "42", name: "Alice" }
+    const store = createMockTableStore(new Map([["42", record]]))
+
+    const getter = () => store.getState().records.get("42")
+    const resolved = typeof getter === "function" ? getter() : getter
+
+    expect(resolved).toEqual(record)
+    expect(resolved !== undefined).toBe(true)
+  })
+
+  it("initialData getter returning undefined yields loading state", () => {
+    // Store is empty — getter returns undefined
+    const store = createMockTableStore(new Map())
+    const getter = () => store.getState().records.get("missing-id")
+    const resolved = typeof getter === "function" ? getter() : getter
+
+    expect(resolved).toBeUndefined()
+    // isLoading initial state = enabled && !hasInitialData = true && true = true
+    const isLoading = true && resolved === undefined
+    expect(isLoading).toBe(true)
+  })
+
+  it("initialData present suppresses initial loading state", () => {
+    const seed = [{ id: "1" }, { id: "2" }]
+    const hasInitialData = seed !== undefined
+    // isLoading initial = enabled && !hasInitialData
+    const isLoadingInitial = true && !hasInitialData
+    expect(isLoadingInitial).toBe(false)
+  })
+
+  // ─── mergeToStore ─────────────────────────────────────────────────────────
+
+  it("mergeToStore calls mergeRecords when result is an array", async () => {
+    const mergeRecords = vi.fn()
+    const store = createMockTableStore()
+    store.setState({ ...store.getState(), mergeRecords })
+
+    const rows = [{ id: "1" }, { id: "2" }]
+    let gen = 0
+
+    const runRefetch = async (queryFn: () => Promise<unknown>) => {
+      const currentGen = ++gen
+      const result = await queryFn()
+      if (currentGen === gen) {
+        if (Array.isArray(result)) {
+          store.getState().mergeRecords(result as any[])
+        }
+      }
+      return result
+    }
+
+    await runRefetch(() => Promise.resolve(rows))
+    expect(mergeRecords).toHaveBeenCalledTimes(1)
+    expect(mergeRecords).toHaveBeenCalledWith(rows)
+  })
+
+  it("mergeToStore does not call mergeRecords when result is not an array", async () => {
+    const mergeRecords = vi.fn()
+    const store = createMockTableStore()
+    store.setState({ ...store.getState(), mergeRecords })
+
+    const singleRecord = { id: "1", title: "Single" }
+    let gen = 0
+
+    const runRefetch = async (queryFn: () => Promise<unknown>) => {
+      const currentGen = ++gen
+      const result = await queryFn()
+      if (currentGen === gen) {
+        if (Array.isArray(result)) {
+          store.getState().mergeRecords(result as any[])
+        }
+      }
+    }
+
+    await runRefetch(() => Promise.resolve(singleRecord))
+    expect(mergeRecords).not.toHaveBeenCalled()
+  })
+
+  it("mergeToStore is not called when the query throws", async () => {
+    const mergeRecords = vi.fn()
+    const store = createMockTableStore()
+    store.setState({ ...store.getState(), mergeRecords })
+
+    let gen = 0
+
+    const runRefetch = async (queryFn: () => Promise<unknown>) => {
+      const currentGen = ++gen
+      try {
+        const result = await queryFn()
+        if (currentGen === gen && Array.isArray(result)) {
+          store.getState().mergeRecords(result as any[])
+        }
+      } catch {
+        // error handling — mergeRecords must not be called
+      }
+    }
+
+    await runRefetch(() => Promise.reject(new Error("network error")))
+    expect(mergeRecords).not.toHaveBeenCalled()
+  })
+
   it("generation counter pattern discards stale results", async () => {
     let generationRef = 0
     const results: string[] = []

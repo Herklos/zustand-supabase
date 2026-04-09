@@ -232,6 +232,43 @@ const { data, isLoading, error, refetch } = useLinkedQuery(
 )
 ```
 
+**`initialData`** — seed data on mount to avoid loading flash (stale-while-revalidate). The network fetch still fires in the background.
+
+```tsx
+const { data: offer } = useLinkedQuery(
+  () => fetchOffer(supabase, id),
+  {
+    stores: [stores.offers],
+    deps: [id],
+    // Read from the store immediately — renders without a loading state
+    initialData: () => stores.offers.getState().records.get(id),
+  },
+)
+```
+
+**`mergeToStore`** — write list results back into a store so detail queries can find them via `initialData`.
+
+```tsx
+// List query populates the store as a side-effect
+const { data: offers } = useLinkedQuery(
+  () => fetchOffers(supabase),
+  {
+    stores: [stores.offers],
+    mergeToStore: stores.offers,  // each fetched offer lands in the store
+  },
+)
+
+// Detail query reads from the store instantly — no loading state on navigation
+const { data: offer } = useLinkedQuery(
+  () => fetchOffer(supabase, id),
+  {
+    stores: [stores.offers],
+    deps: [id],
+    initialData: () => stores.offers.getState().records.get(id),
+  },
+)
+```
+
 #### `useSuspenseQuery(store, options?)`
 
 React Suspense-compatible query. Throws promise while loading.

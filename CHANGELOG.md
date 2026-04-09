@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2026-04-09
+
+### Linked Query Enhancements
+
+- **`initialData` option for `useLinkedQuery()`**: Seed query data from a store lookup or static value — avoids loading flash when navigating from list to detail views. Accepts a value or `() => T | undefined` getter, resolved once on mount. The network fetch still fires in the background (stale-while-revalidate).
+- **`mergeToStore` option for `useLinkedQuery()`**: Write query results back into a table store via `mergeRecords()` — enables list queries to populate the store so detail queries can use `initialData` from it. Only merges when the result is an array. Respects pending mutation protection.
+
 ## [1.2.0] - 2026-04-08
 
 ### Query Cache Strategy
